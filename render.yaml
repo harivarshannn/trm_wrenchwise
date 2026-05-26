@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: trm-backend
+    env: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trm-db
+          property: connectionString
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "https://trm-frontend.onrender.com" # Update this with your actual frontend URL
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+
+databases:
+  - name: trm-db
+    plan: free

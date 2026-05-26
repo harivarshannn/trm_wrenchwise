@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  
+  --primary: #2563eb; /* blue-600 */
+  --primary-hover: #1d4ed8; /* blue-700 */
+  
+  --success: #16a34a; /* green-600 */
+  --warning: #ca8a04; /* yellow-600 */
+  --danger: #dc2626; /* red-600 */
+  
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Custom premium AG Grid theme styling */
+.ag-theme-custom-trms {
+  --ag-font-family: var(--font-sans), sans-serif;
+  --ag-font-size: 13px;
+  --ag-header-background-color: #f8fafc;
+  --ag-header-foreground-color: #475569;
+  --ag-border-color: #f1f5f9;
+  --ag-row-border-color: #f1f5f9;
+  --ag-header-column-separator-display: none;
+  --ag-header-column-resize-handle-display: block;
+  --ag-header-cell-hover-background-color: #f1f5f9;
+  --ag-selected-row-background-color: #eff6ff;
+  --ag-row-hover-color: #f8fafc;
+  --ag-input-focus-border-color: #2563eb;
+  --ag-card-radius: 16px;
+  --ag-grid-size: 8px;
+  --ag-row-height: 56px;
+  --ag-header-height: 48px;
+}
+
+/* Custom table header overrides */
+.ag-theme-custom-trms .ag-header {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.075em;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ag-theme-custom-trms .ag-row {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s ease;
+}
+
+.ag-theme-custom-trms .ag-cell {
+  display: flex;
+  align-items: center;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Pagination container overrides */
+.ag-theme-custom-trms .ag-paging-panel {
+  border-top: 1px solid #f1f5f9;
+  height: 48px;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* Pagination buttons styling */
+.ag-theme-custom-trms .ag-paging-button {
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 4px 10px !important;
+  font-weight: 600;
+  color: #475569 !important;
+  transition: all 0.2s ease;
+}
+
+.ag-theme-custom-trms .ag-paging-button:hover {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.ag-theme-custom-trms .ag-paging-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

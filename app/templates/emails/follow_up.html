@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Follow Up</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 32px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        .content {
+            padding: 32px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .content p {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .footer {
+            background-color: #f1f5f9;
+            padding: 24px 32px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Following Up</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ candidate_name }},</p>
+            <p>I hope you are doing well.</p>
+            <p>We are following up on your application progress for the <strong>{{ role_name }}</strong> trainer opportunity at <strong>{{ company_name }}</strong>.</p>
+            <p>Our team is currently finalizing evaluations, and we wanted to touch base to check if you have any questions for us at this stage or if there are any updates to your availability.</p>
+            <p>We will share more concrete updates with you shortly.</p>
+            <p>Best regards,</p>
+            <p><strong>{{ recruiter_name }}</strong><br>Recruitment Team</p>
+        </div>
+        <div class="footer">
+            <p>Sent via Trainer Recruitment Management System (TRMS)</p>
+        </div>
+    </div>
+</body>
+</html>

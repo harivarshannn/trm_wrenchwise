@@ -1,0 +1,8 @@
+{
+  "build": {
+    "builder": "DOCKERFILE"
+  },
+  "deploy": {
+    "startCommand": "alembic upgrade head && fastapi run app/main.py --proxy-headers --port $PORT"
+  }
+}

@@ -1,0 +1,45 @@
+"""Candidate schemas."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
+
+from app.models.candidate import CandidateStatus
+
+
+class CandidateBase(BaseModel):
+    """Base candidate fields."""
+
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(default=None, max_length=50)
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+
+
+class CandidateCreate(CandidateBase):
+    """Payload for candidate creation."""
+
+    resume_text: Optional[str] = None
+
+
+class CandidateUpdateStatus(BaseModel):
+    """Payload for status updates."""
+
+    status: CandidateStatus
+
+
+class CandidateRead(CandidateBase):
+    """Candidate response."""
+
+    id: uuid.UUID
+    status: CandidateStatus
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

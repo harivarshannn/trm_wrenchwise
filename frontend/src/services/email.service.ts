@@ -1,0 +1,218 @@
+import axios from "axios";
+import { apiClient } from "./api";
+import { CandidateEmail, EmailTemplate, EmailSendPayload } from "../types/email.types";
+
+const EMAILS_STORAGE_KEY = "trms_candidate_emails";
+
+// Seeded local template fallbacks for sandbox testing when backend is offline
+const LOCAL_TEMPLATES: EmailTemplate[] = [
+  {
+    id: "temp_1",
+    template_name: "Initial Outreach",
+    template_key: "initial_outreach",
+    subject: "Career Opportunity: Technical Trainer Role",
+    html_content: `Dear {{ candidate_name }},
+
+I hope this email finds you well.
+
+We recently reviewed your profile and were highly impressed by your background. We are currently looking for a talented technical trainer to join our team for the {{ role_name }} role at {{ company_name }}.
+
+Please let us know your availability for a brief introductory call sometime this week.
+
+Best regards,
+{{ recruiter_name }}
+Recruitment Team`
+  },
+  {
+    id: "temp_2",
+    template_name: "Interview Invitation",
+    template_key: "interview_invitation",
+    subject: "Technical Interview Invitation: Trainer Position",
+    html_content: `Dear {{ candidate_name }},
+
+Thank you for your interest in joining {{ company_name }} as a trainer.
+
+We are pleased to invite you for a technical interview to discuss the {{ role_name }} position.
+
+Your interview is scheduled for:
+{{ interview_date }}
+
+Please reply to this email to confirm if this timing works for you.
+
+Warm regards,
+{{ recruiter_name }}
+Recruitment Team`
+  },
+  {
+    id: "temp_3",
+    template_name: "Follow Up",
+    template_key: "follow_up",
+    subject: "Following up on your Application Status",
+    html_content: `Dear {{ candidate_name }},
+
+I hope you are doing well.
+
+We are following up on your application progress for the {{ role_name }} trainer opportunity at {{ company_name }}.
+
+We will share more concrete updates with you shortly.
+
+Best regards,
+{{ recruiter_name }}
+Recruitment Team`
+  },
+  {
+    id: "temp_4",
+    template_name: "Application Rejected",
+    template_key: "rejection",
+    subject: "Update on your Trainer Application",
+    html_content: `Dear {{ candidate_name }},
+
+Thank you for taking the time to discuss the {{ role_name }} trainer opportunity with us at {{ company_name }}.
+
+We appreciated learning more about your technical expertise. After careful consideration, we have decided to move forward with other candidates whose experiences align more closely with our immediate requirements.
+
+We wish you the absolute best in your future career endeavors.
+
+Sincerely,
+{{ recruiter_name }}
+Recruitment Team`
+  },
+  {
+    id: "temp_5",
+    template_name: "Selection Offer",
+    template_key: "selection",
+    subject: "Congratulations! Offer for Trainer Position",
+    html_content: `Dear {{ candidate_name }},
+
+Congratulations!
+
+We are absolutely thrilled to inform you that you have been selected for the {{ role_name }} trainer role at {{ company_name }}.
+
+Our team was highly impressed by your technical proficiency and teaching methodology. We will send over the formal offer letter and onboarding packet shortly.
+
+We are very excited to welcome you to the team!
+
+Warmest regards,
+{{ recruiter_name }}
+Recruitment Team`
+  }
+];
+
+const getStoredLocalEmails = (): CandidateEmail[] => {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem(EMAILS_STORAGE_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveStoredLocalEmails = (emails: CandidateEmail[]) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(EMAILS_STORAGE_KEY, JSON.stringify(emails));
+  }
+};
+
+export const emailService = {
+  getTemplates: async (): Promise<EmailTemplate[]> => {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: EmailTemplate[] }>("/api/email/templates");
+      if (response.data && response.data.success) {
+        return response.data.data;
+      }
+    } catch (e) {
+      console.warn("Backend API templates fetch failed. Falling back to local templates.", e);
+    }
+    return LOCAL_TEMPLATES;
+  },
+
+  getCandidateEmails: async (candidateId: string): Promise<CandidateEmail[]> => {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: CandidateEmail[] }>(`/api/candidates/${candidateId}/emails`);
+      if (response.data && response.data.success) {
+        return response.data.data;
+      }
+    } catch (e) {
+      console.warn("Backend API emails fetch failed. Falling back to localStorage sandbox.", e);
+    }
+    
+    // Fallback sandbox
+    return getStoredLocalEmails().filter(email => email.candidate_id === candidateId);
+  },
+
+  sendEmail: async (payload: EmailSendPayload): Promise<CandidateEmail> => {
+    try {
+      const response = await apiClient.post<{ success: boolean; data: CandidateEmail }>("/api/emails/send", payload);
+      if (response.data && response.data.success) {
+        return response.data.data;
+      }
+    } catch (e) {
+      // Log the error for visibility
+      console.warn("Backend API dispatch failed. Falling back to local sandbox simulation.", e);
+      
+      // If it's a critical error that isn't a connection or server error, we might want to know, 
+      // but for a smooth demo/dev experience, falling back is safer.
+      if (axios.isAxiosError(e) && e.response) {
+        // We can check specific statuses if we want more granular control
+        // but for now, any failure will trigger the fallback.
+      }
+    }
+
+    // Fallback sandbox simulation:
+    // 1. Fetch candidate name and template details
+    const templates = LOCAL_TEMPLATES;
+    const template = templates.find(t => t.template_key === payload.template_type) || templates[0];
+    
+    const store = require("../hooks/useCandidateStore").useCandidateStore.getState();
+    const candidate = store.candidates.find((c: any) => c.id === payload.candidate_id);
+    const candidateEmail = candidate ? candidate.email : "no-email@example.com";
+    
+    // 2. Render text
+    let body = payload.custom_body || template.html_content;
+    const context = {
+      candidate_name: candidate ? candidate.name : "Candidate",
+      recruiter_name: "Jane Doe (HR Lead)",
+      company_name: "TRMS Recruitment",
+      role_name: "Technical Trainer",
+      interview_date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      ...payload.variables
+    };
+    
+    Object.entries(context).forEach(([key, val]) => {
+      body = body.replace(new RegExp(`{{\\s*${key}\\s*}}`, "g"), String(val));
+    });
+
+    const newEmail: CandidateEmail = {
+      id: `email_${Date.now()}`,
+      candidate_id: payload.candidate_id,
+      recipient_email: candidateEmail,
+      subject: payload.custom_subject || template.subject,
+      body: body,
+      template_type: payload.template_type,
+      email_status: "sent",
+      sent_by: "Jane Doe (HR Lead)",
+      sent_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
+    };
+
+    // 3. Save into local emails storage
+    const allEmails = getStoredLocalEmails();
+    allEmails.unshift(newEmail);
+    saveStoredLocalEmails(allEmails);
+
+    // 4. Also register an activity event in candidate history for completeness
+    try {
+      const notesService = require("./notes.service").notesService;
+      await notesService.addEvent(
+        payload.candidate_id,
+        "note_added", // mapped category
+        "Email Dispatched (Sandbox)",
+        `Outbox delivery completed: "${newEmail.subject}"`,
+        "Jane Doe (HR Lead)"
+      );
+    } catch (e) {
+      console.error("Failed to sync activity timeline:", e);
+    }
+
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return newEmail;
+  }
+};

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Interview Invitation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background-color: #4f46e5;
+            color: #ffffff;
+            padding: 32px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        .content {
+            padding: 32px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .content p {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #e0e7ff;
+            color: #4338ca;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            margin: 8px 0 20px 0;
+        }
+        .footer {
+            background-color: #f1f5f9;
+            padding: 24px 32px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Interview Invitation</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ candidate_name }},</p>
+            <p>Thank you for your interest in joining <strong>{{ company_name }}</strong> as a trainer.</p>
+            <p>We are pleased to invite you for a technical interview to discuss the <strong>{{ role_name }}</strong> position. This session will focus on your domain expertise, technical teaching skills, and past training experiences.</p>
+            <p>Your interview is scheduled for:</p>
+            <div class="badge">
+                {{ interview_date }}
+            </div>
+            <p>Please reply to this email to confirm if this timing works for you, or if we need to propose an alternative slot.</p>
+            <p>We look forward to speaking with you!</p>
+            <p>Warm regards,</p>
+            <p><strong>{{ recruiter_name }}</strong><br>Recruitment Team</p>
+        </div>
+        <div class="footer">
+            <p>Sent via Trainer Recruitment Management System (TRMS)</p>
+        </div>
+    </div>
+</body>
+</html>
