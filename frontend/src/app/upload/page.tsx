@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Dropzone from "../../components/upload/dropzone";
 import ParsedCard from "../../components/upload/parsed-card";
@@ -10,6 +11,7 @@ import { useCheckDuplicate } from "../../hooks/useCandidates";
 import { useQueryClient } from "@tanstack/react-query";
 import { notesService } from "../../services/notes.service";
 import { candidateService } from "../../services/candidate.service";
+import { resumeApi } from "../../services/api";
 import { ParsedResume, Candidate } from "../../types";
 import { BrainCircuit, RotateCcw } from "lucide-react";
 
@@ -20,7 +22,10 @@ export default function UploadPage() {
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateCandidate, setDuplicateCandidate] = useState<Candidate | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-
+  const [bulkQueue, setBulkQueue] = useState<{ name: string; status: "pending" | "uploading" | "success" | "error"; progress: number; error?: string }[]>([]);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  
   const { addCandidate, updateCandidate } = useCandidateStore();
   const checkDuplicateMutation = useCheckDuplicate();
   const router = useRouter();
@@ -125,11 +130,202 @@ export default function UploadPage() {
     setParsedData(updated);
   };
 
+  const handleBulkUploadStart = async (files: File[]) => {
+    setIsBulkMode(true);
+    setIsProcessingBulk(true);
+    
+    // Initialize bulk queue
+    const initialQueue = files.map((file) => ({
+      name: file.name,
+      status: "pending" as const,
+      progress: 0,
+    }));
+    setBulkQueue(initialQueue);
+
+    // Process sequentially
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Set to uploading
+      setBulkQueue((prev) =>
+        prev.map((item, idx) => (idx === i ? { ...item, status: "uploading", progress: 10 } : item))
+      );
+
+      try {
+        // Upload to OCR service
+        const response = await resumeApi.upload(file, (progressEvent: any) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setBulkQueue((prev) =>
+              prev.map((item, idx) =>
+                idx === i ? { ...item, progress: Math.max(10, percent) } : item
+              )
+            );
+          }
+        });
+
+        if (response.success && response.parsed_data) {
+          // Progress to parsed card creation in DB
+          setBulkQueue((prev) =>
+            prev.map((item, idx) => (idx === i ? { ...item, progress: 90 } : item))
+          );
+
+          // Save directly to the database
+          const newCand = await candidateService.createCandidateFromParsedResume(response.parsed_data);
+          addCandidate(newCand);
+
+          // Log timeline event
+          try {
+            await notesService.addEvent(
+              newCand.id,
+              "upload",
+              "Resume Ingested",
+              "Resume uploaded and profile parsed successfully during bulk intake.",
+              "Jane Doe (HR Lead)"
+            );
+          } catch (e) {
+            console.error("Failed to seed timeline event:", e);
+          }
+
+          // Complete
+          setBulkQueue((prev) =>
+            prev.map((item, idx) =>
+              idx === i ? { ...item, status: "success", progress: 100 } : item
+            )
+          );
+        } else {
+          throw new Error("OCR parsing returned invalid format.");
+        }
+      } catch (err: any) {
+        console.error(`Bulk upload failed for ${file.name}:`, err);
+        setBulkQueue((prev) =>
+          prev.map((item, idx) =>
+            idx === i ? { ...item, status: "error", error: err.message || "Failed to process" } : item
+          )
+        );
+      }
+    }
+
+    setIsProcessingBulk(false);
+    // Refresh candidates list query caches
+    queryClient.invalidateQueries({ queryKey: ["candidates"] });
+  };
+
   const handleDone = () => {
     setParsedData(null);
     setUploadedCandidateId(null);
     router.push("/candidates");
   };
+
+  if (isBulkMode) {
+    const successCount = bulkQueue.filter((item) => item.status === "success").length;
+    const errorCount = bulkQueue.filter((item) => item.status === "error").length;
+    const pendingCount = bulkQueue.filter((item) => item.status === "pending" || item.status === "uploading").length;
+
+    return (
+      <div className="space-y-6 max-w-2xl mx-auto animate-in fade-in duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Bulk Resume Intake</h2>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">
+              Processing multiple trainer CVs simultaneously through the OCR extraction tunnel.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setIsBulkMode(false);
+              setBulkQueue([]);
+            }}
+            disabled={isProcessingBulk}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-50 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Upload More</span>
+          </button>
+        </div>
+
+        {/* Bulk stats metrics */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-green-100 bg-green-50/20 p-4 text-center">
+            <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider">Ingested</p>
+            <p className="text-2xl font-bold text-green-700 mt-1">{successCount}</p>
+          </div>
+          <div className="rounded-2xl border border-red-100 bg-red-50/20 p-4 text-center">
+            <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Failed</p>
+            <p className="text-2xl font-bold text-red-700 mt-1">{errorCount}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Remaining</p>
+            <p className="text-2xl font-bold text-slate-700 mt-1">{pendingCount}</p>
+          </div>
+        </div>
+
+        {/* Queue list container */}
+        <div className="rounded-3xl border border-slate-100 bg-white shadow-xl shadow-slate-100/50 overflow-hidden">
+          <div className="border-b border-slate-50 px-6 py-4 flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">Ingestion Queue</span>
+            {isProcessingBulk && (
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-blue-600 animate-pulse">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                Processing...
+              </span>
+            )}
+          </div>
+
+          <div className="divide-y divide-slate-50 max-h-96 overflow-y-auto">
+            {bulkQueue.map((item, idx) => (
+              <div key={idx} className="p-4 flex items-center justify-between gap-4 transition-all hover:bg-slate-50/40">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-bold text-slate-700 truncate pr-2">{item.name}</p>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                      item.status === "success" ? "text-green-600" :
+                      item.status === "error" ? "text-red-600" :
+                      item.status === "uploading" ? "text-blue-600" :
+                      "text-slate-400"
+                    }`}>
+                      {item.status}
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        item.status === "success" ? "bg-green-500" :
+                        item.status === "error" ? "bg-red-500" :
+                        "bg-gradient-to-r from-blue-500 to-indigo-500"
+                      }`}
+                      style={{ width: `${item.progress}%` }}
+                    />
+                  </div>
+                  {item.error && (
+                    <p className="text-[10px] font-semibold text-red-500 mt-1 leading-normal">
+                      Error: {item.error}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer actions */}
+          <div className="border-t border-slate-50 bg-slate-50/40 px-6 py-4 flex justify-between items-center gap-3">
+            <span className="text-[10px] font-semibold text-slate-400 tracking-wide">
+              {isProcessingBulk ? "Do not close this page until ingestion is completed." : "Ingestion complete!"}
+            </span>
+            <Link
+              href="/candidates"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-slate-800 transition-all cursor-pointer"
+            >
+              <span>View Candidate Pipeline</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-300">
@@ -172,7 +368,7 @@ export default function UploadPage() {
                 Drag any trainer CV here. The backend scanner uses direct PDF text extractors and vision OCR fallback systems to index profiles.
               </p>
             </div>
-            <Dropzone onUploadSuccess={handleUploadSuccess} />
+            <Dropzone onUploadSuccess={handleUploadSuccess} onBulkUploadStart={handleBulkUploadStart} />
           </div>
         ) : (
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

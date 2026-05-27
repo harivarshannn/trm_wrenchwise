@@ -11,6 +11,8 @@ from alembic import context
 # Import models to ensure they are registered with Base.metadata
 from app.db.base import Base
 import app.models  # noqa
+from app.utils.config import load_env
+load_env()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

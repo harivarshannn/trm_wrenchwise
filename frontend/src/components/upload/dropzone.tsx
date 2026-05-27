@@ -8,9 +8,10 @@ import { ParsedResume } from "../../types";
 
 interface DropzoneProps {
   onUploadSuccess: (data: ParsedResume) => void;
+  onBulkUploadStart?: (files: File[]) => void;
 }
 
-export default function Dropzone({ onUploadSuccess }: DropzoneProps) {
+export default function Dropzone({ onUploadSuccess, onBulkUploadStart }: DropzoneProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -138,24 +139,43 @@ export default function Dropzone({ onUploadSuccess }: DropzoneProps) {
     setIsDragActive(false);
   };
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
+  const handleMultipleFiles = (files: File[]) => {
+    if (files.length === 0) return;
+    if (files.length > 1 && onBulkUploadStart) {
+      // Enter bulk mode
+      const validFiles = files.filter(f => {
+        // Validate each file silently or show alert if none are valid
+        return allowedTypes.includes(f.type) || f.name.match(/\.(pdf|docx|png|jpg|jpeg)$/i);
+      });
+      if (validFiles.length > 0) {
+        onBulkUploadStart(validFiles);
+      } else {
+        setErrorMessage("None of the uploaded files are supported. Please select PDF, DOCX, PNG, or JPG files.");
+        setUploadState("error");
+      }
+    } else {
+      // Single upload mode
+      const file = files[0];
       if (validateFile(file)) {
         handleUpload(file);
       }
     }
   };
 
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const files = Array.from(e.dataTransfer.files);
+      handleMultipleFiles(files);
+    }
+  };
+
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (validateFile(file)) {
-        handleUpload(file);
-      }
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      handleMultipleFiles(files);
     }
   };
 
@@ -191,6 +211,7 @@ export default function Dropzone({ onUploadSuccess }: DropzoneProps) {
             onChange={onFileChange}
             accept=".pdf,.docx,.png,.jpg,.jpeg"
             className="hidden"
+            multiple
           />
 
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-all duration-300 group-hover:scale-105 group-hover:bg-blue-50 group-hover:text-blue-500 shadow-sm">
@@ -198,10 +219,10 @@ export default function Dropzone({ onUploadSuccess }: DropzoneProps) {
           </div>
 
           <p className="mb-1 text-sm font-semibold text-slate-800">
-            Drag & drop trainer resume here, or <span className="text-blue-600 hover:text-blue-700">browse file</span>
+            Drag & drop trainer resumes (single or bulk), or <span className="text-blue-600 hover:text-blue-700">browse files</span>
           </p>
           <p className="text-xs text-slate-400 mb-6">
-            Supports PDF, DOCX, PNG, or JPG (Max 10MB)
+            Supports uploading multiple files at once. PDF, DOCX, PNG, or JPG (Max 10MB each)
           </p>
 
           <button

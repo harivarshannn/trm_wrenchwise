@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, Sequence
 import uuid
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, func, or_, select, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.candidate import Candidate, CandidateStatus
@@ -106,6 +106,9 @@ class CandidateRepository:
                     Candidate.phone.ilike(like_query),
                     Candidate.linkedin_url.ilike(like_query),
                     Candidate.github_url.ilike(like_query),
+                    Candidate.resume_text.ilike(like_query),
+                    Candidate.location.ilike(like_query),
+                    cast(Candidate.skills, String).ilike(like_query),
                 )
             )
         if status:
@@ -123,7 +126,12 @@ class CandidateRepository:
         if engagement_mode:
             statement = statement.where(Candidate.engagement_mode == engagement_mode)
         if skills:
-            statement = statement.where(Candidate.resume_text.ilike(f"%{skills}%"))
+            statement = statement.where(
+                or_(
+                    Candidate.resume_text.ilike(f"%{skills}%"),
+                    cast(Candidate.skills, String).ilike(f"%{skills}%"),
+                )
+            )
         if uploaded_from:
             statement = statement.where(Candidate.created_at >= uploaded_from)
         if uploaded_to:

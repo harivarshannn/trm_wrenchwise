@@ -19,7 +19,9 @@ export default function ResumeViewer({ resumeUrl, candidateName }: ResumeViewerP
   const getFullUrl = (url?: string) => {
     if (!url) return "";
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    return `http://localhost:8000${url}`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+    return `${cleanBaseUrl}${url}`;
   };
 
   const activeUrl = getFullUrl(resumeUrl) || defaultIframeUrl;

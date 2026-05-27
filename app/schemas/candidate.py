@@ -24,6 +24,10 @@ class CandidateBase(BaseModel):
     salary_expectations: Optional[str] = None
     availability: Optional[str] = None
     resume_url: Optional[str] = None
+    skills: Optional[list[str]] = None
+    education: Optional[list[dict]] = None
+    experience: Optional[list[dict]] = None
+    certifications: Optional[list[str]] = None
 
 
 class CandidateCreate(CandidateBase):
@@ -45,6 +49,10 @@ class CandidateUpdate(BaseModel):
     salary_expectations: Optional[str] = None
     availability: Optional[str] = None
     resume_url: Optional[str] = None
+    skills: Optional[list[str]] = None
+    education: Optional[list[dict]] = None
+    experience: Optional[list[dict]] = None
+    certifications: Optional[list[str]] = None
 
 
 class CandidateUpdateStatus(BaseModel):

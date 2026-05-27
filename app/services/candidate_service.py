@@ -35,6 +35,10 @@ class CandidateService:
         salary_expectations: Optional[str] = None,
         availability: Optional[str] = None,
         resume_url: Optional[str] = None,
+        skills: Optional[list[str]] = None,
+        education: Optional[list[dict]] = None,
+        experience: Optional[list[dict]] = None,
+        certifications: Optional[list[str]] = None,
         created_by: Optional[str] = None,
     ) -> Candidate:
         existing = await self._duplicates.find_exact_duplicate(email, phone, linkedin_url)
@@ -53,6 +57,10 @@ class CandidateService:
             salary_expectations=salary_expectations,
             availability=availability,
             resume_url=resume_url,
+            skills=skills,
+            education=education,
+            experience=experience,
+            certifications=certifications,
             status=CandidateStatus.IN_PROGRESS,
         )
         candidate = await self._repo.create(candidate)
@@ -125,5 +133,9 @@ class CandidateService:
             "salary_expectations": candidate.salary_expectations,
             "availability": candidate.availability,
             "resume_url": candidate.resume_url,
+            "skills": candidate.skills,
+            "education": candidate.education,
+            "experience": candidate.experience,
+            "certifications": candidate.certifications,
             "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
         }

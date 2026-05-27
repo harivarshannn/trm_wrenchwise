@@ -86,6 +86,10 @@ async def create_candidate(
         salary_expectations=payload.salary_expectations,
         availability=payload.availability,
         resume_url=payload.resume_url,
+        skills=payload.skills,
+        education=payload.education,
+        experience=payload.experience,
+        certifications=payload.certifications,
     )
     return APIResponse(success=True, message="Candidate created", data=CandidateRead.model_validate(candidate))
 

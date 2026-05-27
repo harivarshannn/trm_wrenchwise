@@ -1,4 +1,4 @@
-import { Candidate, CandidateStatus, ParsedResume } from "../types";
+import { Candidate, CandidateStatus, ParsedResume, EducationItem, ExperienceItem } from "../types";
 import { useCandidateStore } from "../hooks/useCandidateStore";
 import { apiClient } from "./api";
 
@@ -19,6 +19,10 @@ type CandidateApiResponse = {
   salary_expectations?: string | null;
   availability?: string | null;
   resume_url?: string | null;
+  skills?: string[] | null;
+  education?: EducationItem[] | null;
+  experience?: ExperienceItem[] | null;
+  certifications?: string[] | null;
 };
 
 type ApiResponse<T> = {
@@ -38,10 +42,10 @@ const mapApiCandidate = (
   linkedin_url: candidate.linkedin_url || "",
   github_url: candidate.github_url || "",
   status: candidate.status,
-  skills: parsed?.skills || [],
-  education: parsed?.education || [],
-  experience: parsed?.experience || [],
-  certifications: parsed?.certifications || [],
+  skills: candidate.skills || parsed?.skills || [],
+  education: candidate.education || parsed?.education || [],
+  experience: candidate.experience || parsed?.experience || [],
+  certifications: candidate.certifications || parsed?.certifications || [],
   created_at: candidate.created_at,
   location: candidate.location || parsed?.location || null,
   engagement_mode: candidate.engagement_mode || parsed?.engagement_mode || null,
@@ -150,6 +154,10 @@ export const candidateService = {
       salary_expectations: parsed.salary_expectations || null,
       availability: parsed.availability || null,
       resume_url: parsed.resume_url || null,
+      skills: parsed.skills || [],
+      education: parsed.education || [],
+      experience: parsed.experience || [],
+      certifications: parsed.certifications || [],
     });
 
     if (!response.data.success) {
