@@ -37,6 +37,18 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
 export default function CandidatesPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex items-center justify-center h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-100 border-t-blue-500" />
+      </div>
+    }>
+      <CandidatesList />
+    </React.Suspense>
+  );
+}
+
+function CandidatesList() {
   const searchParams = useSearchParams();
   const statusParam = searchParams.get("status");
   const normalizedStatus =
