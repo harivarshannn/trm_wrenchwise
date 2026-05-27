@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+import os
+
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -14,6 +19,19 @@ from app.services.skills_llm import SkillsLLMService
 from app.utils.config import get_settings, load_env
 from app.utils.logger import configure_logging, get_logger
 from app.utils.rate_limiter import RateLimiterMiddleware
+
+
+def _build_alembic_config() -> Config:
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    config_path = os.path.join(root_dir, "alembic.ini")
+    return Config(config_path)
+
+
+async def _run_migrations(logger) -> None:
+    logger.info("Running database migrations")
+    config = _build_alembic_config()
+    await asyncio.to_thread(command.upgrade, config, "head")
+    logger.info("Database migrations complete")
 
 
 def create_app() -> FastAPI:
@@ -83,9 +101,9 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def startup() -> None:
         logger.info("Starting services")
-        
+        await _run_migrations(logger)
+
         # Start background consumer worker for email dispatching
-        import asyncio
         from app.services.email_service import email_queue_consumer_task
         app.state.email_worker = asyncio.create_task(email_queue_consumer_task())
 
