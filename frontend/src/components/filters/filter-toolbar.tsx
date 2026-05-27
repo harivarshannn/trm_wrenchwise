@@ -11,13 +11,20 @@ interface FilterToolbarProps {
     hasGithub: boolean;
   }) => void;
   isLoading?: boolean;
+  initialStatus?: string;
 }
 
-export default function FilterToolbar({ onFiltersChange, isLoading }: FilterToolbarProps) {
+export default function FilterToolbar({ onFiltersChange, isLoading, initialStatus }: FilterToolbarProps) {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("ALL");
+  const [status, setStatus] = useState(initialStatus || "ALL");
   const [hasLinkedin, setHasLinkedin] = useState(false);
   const [hasGithub, setHasGithub] = useState(false);
+
+  useEffect(() => {
+    if (initialStatus && initialStatus !== status) {
+      setStatus(initialStatus);
+    }
+  }, [initialStatus, status]);
 
   // Trigger filters update with debounce for search text
   useEffect(() => {

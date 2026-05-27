@@ -28,6 +28,7 @@ export default function DashboardPage() {
       color: "blue",
       change: "+12% vs last month",
       bgClass: "bg-blue-50 text-blue-600 border-blue-100",
+      href: "/candidates",
     },
     {
       title: "In Progress",
@@ -36,6 +37,7 @@ export default function DashboardPage() {
       color: "yellow",
       change: "Active screening",
       bgClass: "bg-amber-50 text-amber-600 border-amber-100",
+      href: "/candidates?status=in_progress",
     },
     {
       title: "Selected",
@@ -44,6 +46,7 @@ export default function DashboardPage() {
       color: "green",
       change: "Offers dispatched",
       bgClass: "bg-green-50 text-green-600 border-green-100",
+      href: "/candidates?status=selected",
     },
     {
       title: "Rejected",
@@ -52,6 +55,7 @@ export default function DashboardPage() {
       color: "red",
       change: "Polite letters sent",
       bgClass: "bg-red-50 text-red-600 border-red-100",
+      href: "/candidates?status=rejected",
     },
   ];
 
@@ -82,8 +86,9 @@ export default function DashboardPage() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {statCards.map((stat) => (
-          <div
+          <Link
             key={stat.title}
+            href={stat.href}
             className="rounded-2xl border border-slate-100 bg-white p-5 shadow-md shadow-slate-100/40 hover:shadow-lg transition-all duration-200"
           >
             <div className="flex items-center justify-between">
@@ -96,7 +101,7 @@ export default function DashboardPage() {
               <span className="text-3xl font-bold text-slate-800 tracking-tight">{stat.value}</span>
               <p className="text-[10px] font-semibold text-slate-400 mt-1">{stat.change}</p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import { ColDef, GridReadyEvent, AllCommunityModule } from "ag-grid-community";
 import { Candidate, CandidateStatus } from "../../types";
@@ -36,9 +37,16 @@ import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 
 export default function CandidatesPage() {
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
+  const normalizedStatus =
+    statusParam === "in_progress" || statusParam === "selected" || statusParam === "rejected"
+      ? statusParam
+      : "ALL";
+
   const [filters, setFilters] = useState({
     search: "",
-    status: "ALL",
+    status: normalizedStatus,
     hasLinkedin: false,
     hasGithub: false,
   });
@@ -47,6 +55,13 @@ export default function CandidatesPage() {
   const { data: candidates = [], isLoading } = useCandidates(filters);
   const deleteCandidateMutation = useDeleteCandidate();
   const updateStatusMutation = useUpdateCandidateStatus();
+
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      status: normalizedStatus,
+    }));
+  }, [normalizedStatus]);
 
   // Selected state for sliding drawer
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
@@ -293,7 +308,11 @@ export default function CandidatesPage() {
       </div>
 
       {/* Filter Toolbar Section */}
-      <FilterToolbar onFiltersChange={setFilters} isLoading={isLoading} />
+      <FilterToolbar
+        onFiltersChange={setFilters}
+        isLoading={isLoading}
+        initialStatus={filters.status}
+      />
 
       {/* Primary AG Grid Workspace */}
       <div className="rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-100/50 overflow-hidden p-2">
