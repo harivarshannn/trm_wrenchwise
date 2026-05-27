@@ -19,5 +19,5 @@ COPY alembic.ini /app/alembic.ini
 
 EXPOSE 8000
 
-# Use uvicorn for reliable ASGI execution
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers"]
+# Use uvicorn for reliable ASGI execution. Run migrations separately before deploy.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers"]

@@ -7,9 +7,6 @@ import ParsedCard from "../../components/upload/parsed-card";
 import DuplicateModal from "../../components/modals/duplicate-modal";
 import { useCandidateStore } from "../../hooks/useCandidateStore";
 import { useCheckDuplicate } from "../../hooks/useCandidates";
-import { useQueryClient } from "@tanstack/react-query";
-import { notesService } from "../../services/notes.service";
-import { candidateService } from "../../services/candidate.service";
 import { ParsedResume, Candidate } from "../../types";
 import { BrainCircuit, ArrowLeft, RotateCcw } from "lucide-react";
 
@@ -19,12 +16,10 @@ export default function UploadPage() {
   const [uploadedCandidateId, setUploadedCandidateId] = useState<string | null>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateCandidate, setDuplicateCandidate] = useState<Candidate | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const { addCandidate, updateCandidate } = useCandidateStore();
+  const { addParsedCandidate, updateCandidate } = useCandidateStore();
   const checkDuplicateMutation = useCheckDuplicate();
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const triggerConfetti = async () => {
     try {
@@ -40,30 +35,11 @@ export default function UploadPage() {
     }
   };
 
-  const processAddCandidate = async (data: ParsedResume) => {
-    setUploadError(null);
-    const newCand = await candidateService.createCandidateFromParsedResume(data);
-    addCandidate(newCand);
-
+  const processAddCandidate = (data: ParsedResume) => {
+    const newCand = addParsedCandidate(data);
     setUploadedCandidateId(newCand.id);
     setParsedData(data);
     triggerConfetti();
-
-    // Auto-create initial activity timeline event
-    try {
-      await notesService.addEvent(
-        newCand.id,
-        "upload",
-        "Resume Ingested",
-        "Successfully processed through direct PDF extraction tunnel.",
-        "Jane Doe (HR Lead)"
-      );
-    } catch (e) {
-      console.error("Failed to seed initial timeline event:", e);
-    }
-
-    // Invalidate the candidates grid query list cache to force update
-    queryClient.invalidateQueries({ queryKey: ["candidates"] });
   };
 
   const handleUploadSuccess = async (data: ParsedResume) => {
@@ -80,22 +56,17 @@ export default function UploadPage() {
         setShowDuplicateModal(true);
       } else {
         // No duplicate found. Process ingestion normally
-        await processAddCandidate(data);
+        processAddCandidate(data);
       }
     } catch (e) {
-      console.error("Upload persistence failed:", e);
-      setUploadError("Resume was parsed, but the candidate could not be saved to the backend. Email sending is disabled until the candidate is saved.");
+      console.error("Duplicate check failed, proceeding normally:", e);
+      processAddCandidate(data);
     }
   };
 
-  const handleUploadAnyway = async () => {
+  const handleUploadAnyway = () => {
     if (pendingUploadData) {
-      try {
-        await processAddCandidate(pendingUploadData);
-      } catch (e) {
-        console.error("Upload persistence failed:", e);
-        setUploadError("Resume was parsed, but the candidate could not be saved to the backend. Email sending is disabled until the candidate is saved.");
-      }
+      processAddCandidate(pendingUploadData);
     }
     setShowDuplicateModal(false);
     setPendingUploadData(null);
@@ -132,10 +103,6 @@ export default function UploadPage() {
         certifications: updated.certifications,
       };
       updateCandidate(uploadedCandidateId, mappedUpdate);
-
-      // Invalidate query caches to ensure edited parsed details show instantly
-      queryClient.invalidateQueries({ queryKey: ["candidates"] });
-      queryClient.invalidateQueries({ queryKey: ["candidate", uploadedCandidateId] });
     }
     setParsedData(updated);
   };
@@ -173,11 +140,6 @@ export default function UploadPage() {
       <div className="flex flex-col items-center justify-center py-4">
         {!parsedData ? (
           <div className="w-full space-y-6">
-            {uploadError && (
-              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
-                {uploadError}
-              </div>
-            )}
             <div className="text-center max-w-md mx-auto mb-4">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 mb-4 shadow-sm">
                 <BrainCircuit className="h-6 w-6" />

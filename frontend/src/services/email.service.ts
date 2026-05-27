@@ -143,76 +143,10 @@ export const emailService = {
       if (response.data && response.data.success) {
         return response.data.data;
       }
+      throw new Error("Email API did not confirm delivery queueing.");
     } catch (e) {
-      // Log the error for visibility
-      console.warn("Backend API dispatch failed. Falling back to local sandbox simulation.", e);
-      
-      // If it's a critical error that isn't a connection or server error, we might want to know, 
-      // but for a smooth demo/dev experience, falling back is safer.
-      if (axios.isAxiosError(e) && e.response) {
-        // We can check specific statuses if we want more granular control
-        // but for now, any failure will trigger the fallback.
-      }
+      console.warn("Backend API dispatch failed.", e);
+      throw e;
     }
-
-    // Fallback sandbox simulation:
-    // 1. Fetch candidate name and template details
-    const templates = LOCAL_TEMPLATES;
-    const template = templates.find(t => t.template_key === payload.template_type) || templates[0];
-    
-    const store = require("../hooks/useCandidateStore").useCandidateStore.getState();
-    const candidate = store.candidates.find((c: any) => c.id === payload.candidate_id);
-    const candidateEmail = candidate ? candidate.email : "no-email@example.com";
-    
-    // 2. Render text
-    let body = payload.custom_body || template.html_content;
-    const context = {
-      candidate_name: candidate ? candidate.name : "Candidate",
-      recruiter_name: "Jane Doe (HR Lead)",
-      company_name: "TRMS Recruitment",
-      role_name: "Technical Trainer",
-      interview_date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      ...payload.variables
-    };
-    
-    Object.entries(context).forEach(([key, val]) => {
-      body = body.replace(new RegExp(`{{\\s*${key}\\s*}}`, "g"), String(val));
-    });
-
-    const newEmail: CandidateEmail = {
-      id: `email_${Date.now()}`,
-      candidate_id: payload.candidate_id,
-      recipient_email: candidateEmail,
-      subject: payload.custom_subject || template.subject,
-      body: body,
-      template_type: payload.template_type,
-      email_status: "sent",
-      sent_by: "Jane Doe (HR Lead)",
-      sent_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    };
-
-    // 3. Save into local emails storage
-    const allEmails = getStoredLocalEmails();
-    allEmails.unshift(newEmail);
-    saveStoredLocalEmails(allEmails);
-
-    // 4. Also register an activity event in candidate history for completeness
-    try {
-      const notesService = require("./notes.service").notesService;
-      await notesService.addEvent(
-        payload.candidate_id,
-        "note_added", // mapped category
-        "Email Dispatched (Sandbox)",
-        `Outbox delivery completed: "${newEmail.subject}"`,
-        "Jane Doe (HR Lead)"
-      );
-    } catch (e) {
-      console.error("Failed to sync activity timeline:", e);
-    }
-
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return newEmail;
   }
 };
