@@ -17,11 +17,15 @@ router = APIRouter()
 async def health_check(request: Request) -> dict:
     """Deep health check endpoint verifying database connectivity."""
     from app.db.session import AsyncSessionLocal
+    from app.utils.logger import get_logger
+    logger = get_logger("HealthCheck")
+    
     try:
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
     except Exception as e:
+        logger.error(f"Health check failed: {e}")
         raise HTTPException(status_code=503, detail=f"Database connection failed: {e}")
 
 
