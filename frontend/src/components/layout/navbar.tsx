@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bell, Search, Menu, LogOut, User, Settings, Sparkles, HelpCircle } from "lucide-react";
+import { Bell, Search, Menu, LogOut, User, Settings, HelpCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 interface NavbarProps {
@@ -22,10 +22,8 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
         return "Candidates Directory";
       case "/upload":
         return "Resume OCR Parser";
-      case "/assignments":
-        return "Trainer Assignments";
-      case "/communication":
-        return "Recruiter Outbox";
+      case "/reminders":
+        return "Recruiter Reminders";
       case "/reports":
         return "Reports & Analytics";
       case "/settings":
@@ -38,7 +36,7 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
   const mockNotifications = [
     { id: 1, text: "Resume uploaded successfully: Alex Rivera", time: "10 mins ago", type: "success" },
     { id: 2, text: "OCR parsed high-confidence: Sarah Chen", time: "1 hour ago", type: "info" },
-    { id: 3, text: "New recruiter assigned to assignments flow", time: "4 hours ago", type: "system" }
+    { id: 3, text: "New recruiter assigned to reminders flow", time: "4 hours ago", type: "system" }
   ];
 
   return (

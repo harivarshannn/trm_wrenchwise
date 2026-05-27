@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import type { AxiosError } from "axios";
 import { UploadCloud, File, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { resumeApi } from "../../services/api";
 import { ParsedResume } from "../../types";
@@ -39,6 +40,37 @@ export default function Dropzone({ onUploadSuccess }: DropzoneProps) {
       return false;
     }
     return true;
+  };
+
+  type ErrorDetailItem = { loc?: Array<string | number>; msg?: string };
+  type ErrorResponse = AxiosError<{ detail?: string | ErrorDetailItem[] | Record<string, unknown> }>;
+
+  const getFriendlyMessage = (err: unknown) => {
+    const fallback = "Failed to upload or parse resume.";
+    if (!err || typeof err !== "object") {
+      return fallback;
+    }
+
+    const error = err as ErrorResponse;
+    const detail = error.response?.data?.detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+    if (Array.isArray(detail)) {
+      return detail
+        .map((item) => {
+          const loc = item.loc ? item.loc.join(".") : "";
+          return loc ? `${loc}: ${item.msg ?? "Validation error"}` : item.msg ?? "Validation error";
+        })
+        .join(", ");
+    }
+    if (detail && typeof detail === "object") {
+      return JSON.stringify(detail);
+    }
+    if (typeof error.message === "string" && error.message.length > 0) {
+      return error.message;
+    }
+    return fallback;
   };
 
   const handleUpload = async (file: File) => {
@@ -80,31 +112,16 @@ export default function Dropzone({ onUploadSuccess }: DropzoneProps) {
       } else {
         throw new Error("Invalid response schema from resume parser.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Resume upload error:", err);
       setUploadState("error");
       
-      const isNetworkError = err.message === "Network Error" || !err.response;
-      let friendlyMessage = "Failed to upload or parse resume.";
+      const error = err as ErrorResponse;
+      const isNetworkError = error.message === "Network Error" || !error.response;
+      let friendlyMessage = getFriendlyMessage(err);
       
       if (isNetworkError) {
         friendlyMessage = "FastAPI backend is offline or unreachable. Please start your backend server (e.g., run `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`) to activate the OCR extraction tunnel.";
-      } else if (err.response?.data?.detail) {
-        const detail = err.response.data.detail;
-        if (typeof detail === "string") {
-          friendlyMessage = detail;
-        } else if (Array.isArray(detail)) {
-          friendlyMessage = detail
-            .map((d: any) => {
-              const loc = d.loc ? d.loc.join(".") : "";
-              return loc ? `${loc}: ${d.msg}` : d.msg;
-            })
-            .join(", ");
-        } else if (typeof detail === "object") {
-          friendlyMessage = JSON.stringify(detail);
-        }
-      } else if (err.message) {
-        friendlyMessage = err.message;
       }
       
       setErrorMessage(friendlyMessage);

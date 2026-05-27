@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { MessageSquare, Trash2, Send, Clock, User, AlertCircle, Calendar } from "lucide-react";
+import { MessageSquare, Trash2, Send, Clock, AlertCircle, Calendar } from "lucide-react";
 import { Note } from "../../types";
 
 interface NotesSectionProps {
   notes: Note[];
   isLoading: boolean;
-  onAddNote: (content: string, followupDate?: string) => Promise<any>;
-  onDeleteNote: (noteId: string) => Promise<any>;
+  onAddNote: (content: string, followupDate?: string) => Promise<Note>;
+  onDeleteNote: (noteId: string) => Promise<string>;
 }
 
 export default function NotesSection({

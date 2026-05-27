@@ -14,6 +14,11 @@ type CandidateApiResponse = {
   github_url: string | null;
   status: CandidateStatus;
   created_at: string;
+  location?: string | null;
+  engagement_mode?: string | null;
+  salary_expectations?: string | null;
+  availability?: string | null;
+  resume_url?: string | null;
 };
 
 type ApiResponse<T> = {
@@ -38,6 +43,11 @@ const mapApiCandidate = (
   experience: parsed?.experience || [],
   certifications: parsed?.certifications || [],
   created_at: candidate.created_at,
+  location: candidate.location || parsed?.location || null,
+  engagement_mode: candidate.engagement_mode || parsed?.engagement_mode || null,
+  salary_expectations: candidate.salary_expectations || parsed?.salary_expectations || null,
+  availability: candidate.availability || parsed?.availability || null,
+  resume_url: candidate.resume_url || parsed?.resume_url || null,
 });
 
 export const candidateService = {
@@ -46,6 +56,9 @@ export const candidateService = {
     status?: string;
     hasLinkedin?: boolean;
     hasGithub?: boolean;
+    location?: string;
+    skills?: string;
+    engagement_mode?: string;
   }): Promise<Candidate[]> => {
     try {
       const response = await apiClient.get<
@@ -59,6 +72,9 @@ export const candidateService = {
           status: filters?.status && filters.status !== "ALL" ? filters.status : undefined,
           has_linkedin: filters?.hasLinkedin || undefined,
           has_github: filters?.hasGithub || undefined,
+          location: filters?.location || undefined,
+          skills: filters?.skills || undefined,
+          engagement_mode: filters?.engagement_mode && filters.engagement_mode !== "ALL" ? filters.engagement_mode : undefined,
           limit: 100,
         },
       });
@@ -77,7 +93,7 @@ export const candidateService = {
     let list = [...state.candidates];
 
     if (filters) {
-      const { search, status, hasLinkedin, hasGithub } = filters;
+      const { search, status, hasLinkedin, hasGithub, location, skills, engagement_mode } = filters;
       if (search) {
         const query = search.toLowerCase().trim();
         list = list.filter(
@@ -96,6 +112,17 @@ export const candidateService = {
       }
       if (hasGithub) {
         list = list.filter((c) => c.github_url && c.github_url.trim().length > 0);
+      }
+      if (location) {
+        const query = location.toLowerCase().trim();
+        list = list.filter((c) => c.location?.toLowerCase().includes(query));
+      }
+      if (skills) {
+        const query = skills.toLowerCase().trim();
+        list = list.filter((c) => c.skills.some((s) => s.toLowerCase().includes(query)));
+      }
+      if (engagement_mode && engagement_mode !== "ALL") {
+        list = list.filter((c) => c.engagement_mode === engagement_mode);
       }
     }
     return list;
@@ -118,6 +145,11 @@ export const candidateService = {
       linkedin_url: parsed.linkedin_url || null,
       github_url: parsed.github_url || null,
       resume_text: resumeText || null,
+      location: parsed.location || null,
+      engagement_mode: parsed.engagement_mode || null,
+      salary_expectations: parsed.salary_expectations || null,
+      availability: parsed.availability || null,
+      resume_url: parsed.resume_url || null,
     });
 
     if (!response.data.success) {
@@ -125,6 +157,26 @@ export const candidateService = {
     }
 
     return mapApiCandidate(response.data.data, parsed);
+  },
+
+  updateCandidate: async (id: string, updated: Partial<Candidate>): Promise<Candidate> => {
+    try {
+      const response = await apiClient.patch<ApiResponse<CandidateApiResponse>>(`/api/candidates/${id}`, updated);
+      if (response.data.success) {
+        const mapped = mapApiCandidate(response.data.data);
+        useCandidateStore.getState().updateCandidate(id, mapped);
+        return mapped;
+      }
+    } catch (error) {
+      console.warn("Backend candidate update failed. Falling back to local state.", error);
+    }
+
+    await delay(200);
+    const store = useCandidateStore.getState();
+    store.updateCandidate(id, updated);
+    const result = store.candidates.find((c) => c.id === id);
+    if (!result) throw new Error("Candidate not found.");
+    return result;
   },
 
   updateCandidateStatus: async (id: string, status: CandidateStatus): Promise<Candidate> => {

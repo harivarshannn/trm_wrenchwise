@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosProgressEvent } from "axios";
 import { UploadResumeResponse } from "../types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -13,7 +13,7 @@ export const apiClient = axios.create({
 export const resumeApi = {
   upload: async (
     file: File,
-    onUploadProgress?: (progressEvent: any) => void
+    onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
   ): Promise<UploadResumeResponse> => {
     const formData = new FormData();
     formData.append("file", file);

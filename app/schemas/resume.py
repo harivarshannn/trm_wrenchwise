@@ -33,6 +33,9 @@ class ParsedData(BaseModel):
     certifications: List[str] = Field(default_factory=list)
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
+    location: Optional[str] = None
+    engagement_mode: Optional[str] = None
+    resume_url: Optional[str] = None
 
 
 class UploadResumeResponse(BaseModel):

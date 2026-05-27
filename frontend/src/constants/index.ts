@@ -4,8 +4,7 @@ export const NAVIGATION_ITEMS = [
   { name: "Dashboard", href: "/", icon: "LayoutDashboard", isPage: true },
   { name: "Candidates", href: "/candidates", icon: "Users", isPage: true },
   { name: "Upload Resume", href: "/upload", icon: "UploadCloud", isPage: true },
-  { name: "Assignments", href: "/assignments", icon: "FileSpreadsheet", isPage: false },
-  { name: "Communication", href: "/communication", icon: "MessageSquare", isPage: false },
+  { name: "Reminders", href: "/reminders", icon: "CalendarClock", isPage: true },
   { name: "Reports", href: "/reports", icon: "BarChart3", isPage: false },
   { name: "Settings", href: "/settings", icon: "Settings", isPage: false },
 ];

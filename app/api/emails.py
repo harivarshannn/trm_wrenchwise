@@ -51,6 +51,7 @@ async def send_email(
             custom_body=payload.custom_body,
             variables=payload.variables,
             sent_by="Jane Doe (HR Lead)",  # Recruiter default session
+            followup_date=payload.followup_date,
         )
         return APIResponse(
             success=True,

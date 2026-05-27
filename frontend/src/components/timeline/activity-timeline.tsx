@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { UploadCloud, MessageSquare, RefreshCw, AlertTriangle, User, Clock, ArrowRight } from "lucide-react";
+import { UploadCloud, MessageSquare, RefreshCw, AlertTriangle, User, Clock } from "lucide-react";
 import { ActivityEvent } from "../../types";
 
 interface ActivityTimelineProps {

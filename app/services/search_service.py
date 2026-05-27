@@ -27,6 +27,9 @@ class SearchService:
         uploaded_to: Optional[datetime],
         page: int,
         limit: int,
+        location: Optional[str] = None,
+        skills: Optional[str] = None,
+        engagement_mode: Optional[str] = None,
     ):
         offset = (page - 1) * limit
         return await self._repo.search(
@@ -38,4 +41,7 @@ class SearchService:
             uploaded_to=uploaded_to,
             offset=offset,
             limit=limit,
+            location=location,
+            skills=skills,
+            engagement_mode=engagement_mode,
         )

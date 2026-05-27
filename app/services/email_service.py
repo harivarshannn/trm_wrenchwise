@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import date, datetime
 import os
 from typing import Any, Dict, Optional, Sequence
 import uuid
@@ -17,6 +17,7 @@ from app.models.candidate_email import CandidateEmail
 from app.repositories.candidate_repository import CandidateRepository
 from app.repositories.email_repository import EmailRepository
 from app.services.activity_service import ActivityService
+from app.services.notes_service import NotesService
 from app.utils.config import get_settings
 from app.utils.logger import get_logger
 
@@ -139,6 +140,7 @@ class EmailService:
         custom_body: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
         sent_by: Optional[str] = "Jane Doe (HR Lead)",
+        followup_date: Optional[date] = None,
     ) -> CandidateEmail:
         """Render, validate, log, and enqueue candidate email delivery."""
         candidate = await self._candidate_repo.get_by_id(candidate_id)
@@ -188,6 +190,14 @@ class EmailService:
             sent_by=sent_by,
         )
         email_log = await self._email_repo.create_email_log(email_log)
+
+        if followup_date:
+            await NotesService(self._session).create_note(
+                candidate_id=candidate_id,
+                note=f"Follow-up scheduled after email: {subject}",
+                created_by=sent_by,
+                followup_date=followup_date,
+            )
 
         # 2. Queue sending task to asyncio queue worker
         await email_queue.put(

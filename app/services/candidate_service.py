@@ -30,6 +30,11 @@ class CandidateService:
         linkedin_url: Optional[str],
         github_url: Optional[str],
         resume_text: Optional[str],
+        location: Optional[str] = None,
+        engagement_mode: Optional[str] = None,
+        salary_expectations: Optional[str] = None,
+        availability: Optional[str] = None,
+        resume_url: Optional[str] = None,
         created_by: Optional[str] = None,
     ) -> Candidate:
         existing = await self._duplicates.find_exact_duplicate(email, phone, linkedin_url)
@@ -43,6 +48,11 @@ class CandidateService:
             linkedin_url=linkedin_url,
             github_url=github_url,
             resume_text=resume_text,
+            location=location,
+            engagement_mode=engagement_mode,
+            salary_expectations=salary_expectations,
+            availability=availability,
+            resume_url=resume_url,
             status=CandidateStatus.IN_PROGRESS,
         )
         candidate = await self._repo.create(candidate)
@@ -51,6 +61,28 @@ class CandidateService:
             action_type="resume_upload",
             description="Resume uploaded",
             created_by=created_by,
+        )
+        return candidate
+
+    async def update_candidate(
+        self, candidate_id: uuid.UUID, payload: Any, updated_by: Optional[str] = None
+    ) -> Candidate:
+        candidate = await self._repo.get_by_id(candidate_id)
+        if not candidate:
+            raise NotFoundError("Candidate not found.")
+
+        update_data = payload.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(candidate, key, value)
+
+        await self._repo._session.commit()
+        await self._repo._session.refresh(candidate)
+
+        await self._activity.log(
+            candidate_id=candidate.id,
+            action_type="candidate_updated",
+            description="Candidate details updated",
+            created_by=updated_by,
         )
         return candidate
 
@@ -88,5 +120,10 @@ class CandidateService:
             "linkedin_url": candidate.linkedin_url,
             "github_url": candidate.github_url,
             "status": candidate.status.value,
+            "location": candidate.location,
+            "engagement_mode": candidate.engagement_mode,
+            "salary_expectations": candidate.salary_expectations,
+            "availability": candidate.availability,
+            "resume_url": candidate.resume_url,
             "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
         }

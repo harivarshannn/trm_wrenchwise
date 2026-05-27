@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Send, Sparkles, AlertCircle, Info } from "lucide-react";
+import React, { useState } from "react";
+import { X, Send, Sparkles, AlertCircle } from "lucide-react";
 import { useEmailTemplates, useSendEmail } from "../../hooks/useEmails";
 import RichTextEditor from "./rich-text-editor";
 import { Candidate } from "../../types";
+import { EmailTemplate } from "../../types/email.types";
 
 interface SendEmailModalProps {
   isOpen: boolean;
@@ -13,62 +14,95 @@ interface SendEmailModalProps {
 }
 
 export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmailModalProps) {
-  const { data: templates = [], isLoading: isLoadingTemplates } = useEmailTemplates();
+  const { data: templates = [] } = useEmailTemplates();
   const sendEmailMutation = useSendEmail();
 
   const [selectedTemplateKey, setSelectedTemplateKey] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [interviewDate, setInterviewDate] = useState("");
+  const [followupDate, setFollowupDate] = useState("");
   
   const [alertMessage, setAlertMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Auto-fill template default details and replace placeholders when template is selected
-  useEffect(() => {
-    if (!selectedTemplateKey || templates.length === 0) return;
+  type ErrorDetailItem = { loc?: Array<string | number>; msg?: string };
+  type ErrorResponse = {
+    response?: { data?: { detail?: string | ErrorDetailItem[] | Record<string, unknown> } };
+    message?: string;
+  };
 
-    const template = templates.find((t) => t.template_key === selectedTemplateKey);
-    if (template) {
-      setSubject(template.subject);
-      
-      // Local placeholder replacement logic for editor WYSIWYG convenience
-      let processedContent = template.html_content;
-      
-      // Default to tomorrow at 10 AM if no interview date is selected
-      const defaultDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
-      defaultDate.setHours(10, 0, 0, 0);
+  const buildTemplateContent = (template: EmailTemplate, dateValue: string) => {
+    let processedContent = template.html_content;
 
-      const formattedDate = interviewDate 
-        ? new Date(interviewDate).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-          })
-        : defaultDate.toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-          });
+    // Default to tomorrow at 10 AM if no interview date is selected
+    const defaultDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
+    defaultDate.setHours(10, 0, 0, 0);
 
-      const replacements: Record<string, string> = {
-        candidate_name: candidate.name || "Candidate",
-        recruiter_name: "Jane Doe (HR Lead)",
-        company_name: "TRMS Recruitment",
-        role_name: "Technical Trainer",
-        interview_date: formattedDate
-      };
+    const formattedDate = dateValue
+      ? new Date(dateValue).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      : defaultDate.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
 
-      Object.entries(replacements).forEach(([key, val]) => {
-        processedContent = processedContent.replace(new RegExp(`{{\\s*${key}\\s*}}`, "g"), val);
-      });
+    const replacements: Record<string, string> = {
+      candidate_name: candidate.name || "Candidate",
+      recruiter_name: "Jane Doe (HR Lead)",
+      company_name: "TRMS Recruitment",
+      role_name: "Technical Trainer",
+      interview_date: formattedDate
+    };
 
-      setBody(processedContent);
+    Object.entries(replacements).forEach(([key, val]) => {
+      processedContent = processedContent.replace(new RegExp(`{{\\s*${key}\\s*}}`, "g"), val);
+    });
+
+    return processedContent;
+  };
+
+  const updateTemplateContent = (templateKey: string, dateValue: string) => {
+    const template = templates.find((t) => t.template_key === templateKey);
+    if (!template) return;
+    setSubject(template.subject);
+    setBody(buildTemplateContent(template, dateValue));
+  };
+
+  const getErrorMessage = (err: unknown) => {
+    const fallback = "Failed to dispatch email. Please verify backend state.";
+    if (!err || typeof err !== "object") {
+      return fallback;
     }
-  }, [selectedTemplateKey, templates, candidate, interviewDate]);
+
+    const error = err as ErrorResponse;
+    const detail = error.response?.data?.detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+    if (Array.isArray(detail)) {
+      return detail
+        .map((item) => {
+          const loc = item.loc ? item.loc.join(".") : "";
+          return loc ? `${loc}: ${item.msg ?? "Validation error"}` : item.msg ?? "Validation error";
+        })
+        .join(", ");
+    }
+    if (detail && typeof detail === "object") {
+      return JSON.stringify(detail);
+    }
+    if (typeof error.message === "string" && error.message.length > 0) {
+      return error.message;
+    }
+    return fallback;
+  };
 
   if (!isOpen) return null;
 
@@ -82,7 +116,7 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
     setAlertMessage(null);
     try {
       // Package variables for backend parsing
-      const variables: Record<string, any> = {
+      const variables: Record<string, string | undefined> = {
         candidate_name: candidate.name,
         recruiter_name: "Jane Doe (HR Lead)",
         company_name: "TRMS Recruitment",
@@ -104,7 +138,8 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
         template_type: selectedTemplateKey,
         custom_subject: subject,
         custom_body: body,
-        variables
+        variables,
+        followup_date: followupDate || undefined
       });
 
       setAlertMessage({ type: "success", text: "Email dispatched successfully!" });
@@ -115,29 +150,12 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
         setSubject("");
         setBody("");
         setInterviewDate("");
+        setFollowupDate("");
         setAlertMessage(null);
       }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      let errorMessage = "Failed to dispatch email. Please verify backend state.";
-      if (err.response?.data?.detail) {
-        const detail = err.response.data.detail;
-        if (typeof detail === "string") {
-          errorMessage = detail;
-        } else if (Array.isArray(detail)) {
-          errorMessage = detail
-            .map((d: any) => {
-              const loc = d.loc ? d.loc.join(".") : "";
-              return loc ? `${loc}: ${d.msg}` : d.msg;
-            })
-            .join(", ");
-        } else if (typeof detail === "object") {
-          errorMessage = JSON.stringify(detail);
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
+      const errorMessage = getErrorMessage(err);
       setAlertMessage({
         type: "error",
         text: errorMessage
@@ -208,7 +226,16 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
               <select
                 required
                 value={selectedTemplateKey}
-                onChange={(e) => setSelectedTemplateKey(e.target.value)}
+                onChange={(e) => {
+                  const nextKey = e.target.value;
+                  setSelectedTemplateKey(nextKey);
+                  if (nextKey) {
+                    updateTemplateContent(nextKey, interviewDate);
+                  } else {
+                    setSubject("");
+                    setBody("");
+                  }
+                }}
                 className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition-all"
               >
                 <option value="">-- Choose Template --</option>
@@ -225,17 +252,36 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
           {selectedTemplateKey === "interview_invitation" && (
             <div className="space-y-1 rounded-xl bg-indigo-50/40 border border-indigo-100/50 p-4 animate-in slide-in-from-top-2 duration-200">
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-700 uppercase tracking-wider mb-2">
-                <Info className="h-3.5 w-3.5" />
+                <AlertCircle className="h-3.5 w-3.5" />
                 <span>Configure Interview Slot</span>
               </div>
               <input
                 type="datetime-local"
                 value={interviewDate}
-                onChange={(e) => setInterviewDate(e.target.value)}
+                onChange={(e) => {
+                  const nextDate = e.target.value;
+                  setInterviewDate(nextDate);
+                  if (selectedTemplateKey) {
+                    updateTemplateContent(selectedTemplateKey, nextDate);
+                  }
+                }}
                 className="rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
               />
             </div>
           )}
+
+          {/* Optional Follow-up Reminder Date */}
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Follow-up Reminder Date
+            </label>
+            <input
+              type="date"
+              value={followupDate}
+              onChange={(e) => setFollowupDate(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+          </div>
 
           {/* Subject Line */}
           <div className="space-y-1">

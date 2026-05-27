@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle, User, Calendar, Tag, ArrowRight, X } from "lucide-react";
+import { AlertTriangle, User, Calendar, Tag, ArrowRight } from "lucide-react";
 import { Candidate } from "../../types";
 
 interface DuplicateModalProps {

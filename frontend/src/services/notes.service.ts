@@ -1,9 +1,20 @@
-import { Note, ActivityEvent } from "../types";
+import { apiClient } from "./api";
+import { useCandidateStore } from "../hooks/useCandidateStore";
+import { Note, ActivityEvent, ReminderItem } from "../types";
 
 const NOTES_STORAGE_KEY = "trms_recruiter_notes";
 const EVENTS_STORAGE_KEY = "trms_activity_events";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+type NoteApiItem = {
+  id: string;
+  candidate_id: string;
+  created_by?: string | null;
+  note: string;
+  created_at: string;
+  followup_date?: string | null;
+};
 
 // Helper to seed initial mockup notes and events if not present in localStorage
 const getStoredNotes = (): Note[] => {
@@ -50,7 +61,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       candidateId: "c0a80101-0000-0000-0000-000000000001",
       type: "upload",
       title: "Resume Ingested",
-      description: "Successfully processed through direct PDF extraction tunnel.",
+      description: "Resume uploaded successfully.",
       recruiterName: "Jane Doe",
       created_at: "2026-05-20T10:30:00Z",
     },
@@ -59,7 +70,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       candidateId: "c0a80101-0000-0000-0000-000000000001",
       type: "note_added",
       title: "Screening Note Added",
-      description: "Added core performance evaluation feedback.",
+      description: "Note added by recruiter.",
       recruiterName: "Jane Doe",
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     },
@@ -68,7 +79,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       candidateId: "c0a80101-0000-0000-0000-000000000001",
       type: "status_change",
       title: "Recruitment Status Updated",
-      description: "Pipeline status advanced: In Progress ➔ Selected",
+      description: "Candidate status changed: In Progress to Selected.",
       recruiterName: "Robert Miller",
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
     },
@@ -77,7 +88,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       candidateId: "c0a80101-0000-0000-0000-000000000002",
       type: "upload",
       title: "Resume Ingested",
-      description: "Processed Sarah Chen's CV using Direct Text Extractor.",
+      description: "Resume uploaded successfully.",
       recruiterName: "Jane Doe",
       created_at: "2026-05-22T14:45:00Z",
     },
@@ -86,7 +97,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       candidateId: "c0a80101-0000-0000-0000-000000000003",
       type: "upload",
       title: "Resume Ingested",
-      description: "Successfully processed Marcus Vance's CV.",
+      description: "Resume uploaded successfully.",
       recruiterName: "Jane Doe",
       created_at: "2026-05-24T09:15:00Z",
     },
@@ -95,7 +106,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       candidateId: "c0a80101-0000-0000-0000-000000000003",
       type: "status_change",
       title: "Recruitment Status Updated",
-      description: "Pipeline status shifted: In Progress ➔ Rejected",
+      description: "Candidate status changed: In Progress to Rejected.",
       recruiterName: "Jane Doe",
       created_at: "2026-05-24T11:00:00Z",
     },
@@ -104,7 +115,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       candidateId: "c0a80101-0000-0000-0000-000000000004",
       type: "upload",
       title: "Resume Ingested",
-      description: "Successfully processed Elena Rostova's CV.",
+      description: "Resume uploaded successfully.",
       recruiterName: "Jane Doe",
       created_at: "2026-05-25T16:20:00Z",
     }
@@ -115,9 +126,26 @@ const getStoredEvents = (): ActivityEvent[] => {
 
 export const notesService = {
   getNotes: async (candidateId: string): Promise<Note[]> => {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: NoteApiItem[] }>(
+        `/api/candidates/${candidateId}/notes`
+      );
+      if (response.data && response.data.success) {
+        return response.data.data.map((note) => ({
+          id: note.id,
+          candidateId: note.candidate_id,
+          recruiterName: note.created_by || "HR Manager",
+          content: note.note,
+          created_at: note.created_at,
+          followup_date: note.followup_date || undefined,
+        }));
+      }
+    } catch (error) {
+      console.warn("Backend notes fetch failed. Falling back to local storage.", error);
+    }
+
     await delay(200);
     const notes = getStoredNotes();
-    // Return reverse-chronological order
     return notes
       .filter((n) => n.candidateId === candidateId)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -129,6 +157,29 @@ export const notesService = {
     recruiterName = "HR Manager",
     followupDate?: string
   ): Promise<Note> => {
+    try {
+      const response = await apiClient.post<{ success: boolean; data: NoteApiItem }>(
+        `/api/candidates/${candidateId}/notes`,
+        {
+          note: content.trim(),
+          created_by: recruiterName,
+          followup_date: followupDate || null,
+        }
+      );
+      if (response.data && response.data.success) {
+        return {
+          id: response.data.data.id,
+          candidateId: response.data.data.candidate_id,
+          recruiterName: response.data.data.created_by || recruiterName,
+          content: response.data.data.note,
+          created_at: response.data.data.created_at,
+          followup_date: response.data.data.followup_date || undefined,
+        };
+      }
+    } catch (error) {
+      console.warn("Backend note create failed. Falling back to local storage.", error);
+    }
+
     await delay(200);
     const notes = getStoredNotes();
     const newNote: Note = {
@@ -139,14 +190,12 @@ export const notesService = {
       created_at: new Date().toISOString(),
       ...(followupDate ? { followup_date: followupDate } : {}),
     };
-    
-    // Save note
+
     notes.push(newNote);
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
 
-    // Automatically append a corresponding timeline event
-    const followUpText = followupDate 
-      ? ` (Follow-up scheduled: ${new Date(followupDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})` 
+    const followUpText = followupDate
+      ? ` (Follow-up scheduled: ${new Date(followupDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})`
       : "";
     await notesService.addEvent(
       candidateId,
@@ -160,11 +209,52 @@ export const notesService = {
   },
 
   deleteNote: async (noteId: string): Promise<string> => {
+    try {
+      await apiClient.delete(`/api/notes/${noteId}`);
+      return noteId;
+    } catch (error) {
+      console.warn("Backend note delete failed. Falling back to local storage.", error);
+    }
+
     await delay(100);
     const notes = getStoredNotes();
     const updated = notes.filter((n) => n.id !== noteId);
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(updated));
     return noteId;
+  },
+
+  getReminders: async (days = 30): Promise<ReminderItem[]> => {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: ReminderItem[] }>(
+        "/api/notes/reminders",
+        { params: { days } }
+      );
+      if (response.data && response.data.success) {
+        return response.data.data;
+      }
+    } catch (error) {
+      console.warn("Backend reminders fetch failed. Falling back to local storage.", error);
+    }
+
+    await delay(150);
+    const notes = getStoredNotes().filter((note) => note.followup_date);
+    const candidates = useCandidateStore.getState().candidates;
+    return notes
+      .map((note) => {
+        const candidate = candidates.find((c) => c.id === note.candidateId);
+        return {
+          note_id: note.id,
+          candidate_id: note.candidateId,
+          candidate_name: candidate?.name,
+          candidate_email: candidate?.email,
+          candidate_status: candidate?.status,
+          note: note.content,
+          followup_date: note.followup_date!,
+          created_by: note.recruiterName,
+          created_at: note.created_at,
+        };
+      })
+      .sort((a, b) => new Date(a.followup_date).getTime() - new Date(b.followup_date).getTime());
   },
 
   getEvents: async (candidateId: string): Promise<ActivityEvent[]> => {

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, User, Mail, Phone, Calendar, Award, Briefcase, FileText, MessageSquare, Clock, GraduationCap, Link2 } from "lucide-react";
+import React, { useState } from "react";
+import { X, Mail, Phone, Calendar, FileText, MessageSquare, Clock } from "lucide-react";
 import { Candidate, CandidateStatus } from "../../types";
 import { useNotes, useAddNote, useDeleteNote, useTimelineEvents } from "../../hooks/useNotes";
-import { useUpdateCandidateStatus } from "../../hooks/useCandidates";
+import { useUpdateCandidateStatus, useUpdateCandidate } from "../../hooks/useCandidates";
 import { useCandidateStore } from "../../hooks/useCandidateStore";
 import ResumeViewer from "./resume-viewer";
 import NotesSection from "../notes/notes-section";
@@ -37,7 +37,9 @@ const Github = ({ className }: { className?: string }) => (
 export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsDrawerProps) {
   const [activeTab, setActiveTab] = useState<"resume" | "notes" | "communication" | "timeline">("resume");
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const candidate = useCandidateStore(
+    (state) => state.candidates.find((c) => c.id === candidateId) || null
+  );
 
   // Queries & Mutations
   const { data: notesList = [], isLoading: isLoadingNotes } = useNotes(candidateId);
@@ -46,29 +48,12 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
   const deleteNoteMutation = useDeleteNote();
   const updateStatusMutation = useUpdateCandidateStatus();
 
-  // Keep primary candidate data in local state and sync it with updates in primary list
-  useEffect(() => {
-    if (candidateId) {
-      // Find candidate from primary store
-      const match = useCandidateStore.getState().candidates.find((c: Candidate) => c.id === candidateId);
-      if (match) {
-        setCandidate(match);
-      }
-    }
-  }, [candidateId, updateStatusMutation.isSuccess]);
-
   if (!isOpen || !candidateId) return null;
 
   const handleStatusChange = async (newStatus: CandidateStatus) => {
     if (candidate) {
       await updateStatusMutation.mutateAsync({
         id: candidate.id,
-        status: newStatus,
-        candidateName: candidate.name,
-      });
-      // Sync local status
-      setCandidate({
-        ...candidate,
         status: newStatus,
       });
     }
@@ -302,13 +287,14 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             {/* PDF Viewer Tab */}
             {activeTab === "resume" && candidate && (
               <div className="h-full animate-in fade-in duration-200">
-                <ResumeViewer candidateName={candidate.name} />
+                <ResumeViewer resumeUrl={candidate.resume_url || undefined} candidateName={candidate.name} />
               </div>
             )}
 
             {/* Recruiter Notes Tab */}
-            {activeTab === "notes" && (
-              <div className="animate-in fade-in duration-200">
+            {activeTab === "notes" && candidate && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <CandidatePreferencesWidget candidate={candidate} />
                 <NotesSection
                   notes={notesList}
                   isLoading={isLoadingNotes}
@@ -361,6 +347,122 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
         />
       )}
 
+    </div>
+  );
+}
+
+function CandidatePreferencesWidget({ candidate }: { candidate: Candidate }) {
+  const updateCandidateMutation = useUpdateCandidate();
+  const [editedLocation, setEditedLocation] = useState(candidate.location || "");
+  const [editedEngagementMode, setEditedEngagementMode] = useState(candidate.engagement_mode || "online");
+  const [editedSalary, setEditedSalary] = useState(candidate.salary_expectations || "");
+  const [editedAvailability, setEditedAvailability] = useState(candidate.availability || "");
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Sync state if candidate prop changes
+  React.useEffect(() => {
+    setEditedLocation(candidate.location || "");
+    setEditedEngagementMode(candidate.engagement_mode || "online");
+    setEditedSalary(candidate.salary_expectations || "");
+    setEditedAvailability(candidate.availability || "");
+  }, [candidate]);
+
+  const handleSave = async () => {
+    await updateCandidateMutation.mutateAsync({
+      id: candidate.id,
+      updated: {
+        location: editedLocation.trim() || null,
+        engagement_mode: editedEngagementMode.trim() || null,
+        salary_expectations: editedSalary.trim() || null,
+        availability: editedAvailability.trim() || null,
+      },
+    });
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          Candidate Preferences & Availability
+        </h4>
+        {isSaved && (
+          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md animate-pulse">
+            Preferences Saved!
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Location Preference */}
+        <div>
+          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+            Preferred Location
+          </label>
+          <input
+            type="text"
+            value={editedLocation}
+            onChange={(e) => setEditedLocation(e.target.value)}
+            placeholder="e.g. San Francisco, CA"
+            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
+          />
+        </div>
+
+        {/* Engagement Mode */}
+        <div>
+          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+            Engagement Model
+          </label>
+          <select
+            value={editedEngagementMode}
+            onChange={(e) => setEditedEngagementMode(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
+          >
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+        </div>
+
+        {/* Salary Expectations */}
+        <div>
+          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+            Salary Expectations
+          </label>
+          <input
+            type="text"
+            value={editedSalary}
+            onChange={(e) => setEditedSalary(e.target.value)}
+            placeholder="e.g. $120,000/yr"
+            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
+          />
+        </div>
+
+        {/* Availability */}
+        <div>
+          <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+            Availability / Notice Period
+          </label>
+          <input
+            type="text"
+            value={editedAvailability}
+            onChange={(e) => setEditedAvailability(e.target.value)}
+            placeholder="e.g. Immediate, 2 weeks"
+            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={handleSave}
+          disabled={updateCandidateMutation.isPending}
+          className="inline-flex items-center gap-1 rounded-xl bg-slate-900 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-slate-800 disabled:bg-slate-400 transition-colors cursor-pointer"
+        >
+          {updateCandidateMutation.isPending ? "Saving..." : "Save Preferences"}
+        </button>
+      </div>
     </div>
   );
 }

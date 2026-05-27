@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Mail, MessageSquare, AlertCircle } from "lucide-react";
+import { Mail, AlertCircle } from "lucide-react";
 import { useCandidateEmails } from "../../hooks/useEmails";
 import EmailCard from "./email-card";
 

@@ -40,6 +40,18 @@ async def upload_resume(request: Request, file: UploadFile = File(...)) -> Uploa
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
+    # Save original file to uploads/ directory
+    import os
+    import uuid
+    os.makedirs("uploads", exist_ok=True)
+    file_ext = os.path.splitext(file.filename or "")[1] or ".pdf"
+    unique_filename = f"{uuid.uuid4()}{file_ext}"
+    file_path = os.path.join("uploads", unique_filename)
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    resume_url = f"/uploads/{unique_filename}"
+
     raw_text = ""
     ocr_confidence = None
 
@@ -65,9 +77,13 @@ async def upload_resume(request: Request, file: UploadFile = File(...)) -> Uploa
     parser = request.app.state.parser
     parsed_resume = await asyncio.to_thread(parser.parse, raw_text)
 
+    # Convert to dict and add resume_url
+    parsed_dict = parsed_resume.to_dict()
+    parsed_dict["resume_url"] = resume_url
+
     return UploadResumeResponse(
         success=True,
         raw_text=raw_text,
-        parsed_data=ParsedData(**parsed_resume.to_dict()),
+        parsed_data=ParsedData(**parsed_dict),
         ocr_confidence=ocr_confidence,
     )

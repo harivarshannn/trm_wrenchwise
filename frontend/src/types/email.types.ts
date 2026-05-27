@@ -24,5 +24,6 @@ export interface EmailSendPayload {
   template_type: string;
   custom_subject?: string;
   custom_body?: string;
-  variables?: Record<string, any>;
+  variables?: Record<string, string | number | boolean | null | undefined>;
+  followup_date?: string;
 }

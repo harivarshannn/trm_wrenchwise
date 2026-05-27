@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Copy, Check, Mail, Phone, GraduationCap, Briefcase, Award, Sparkles, ArrowRight, BookOpen } from "lucide-react";
+import { Copy, Check, Mail, Phone, GraduationCap, Briefcase, Award, Sparkles, ArrowRight, BookOpen, MapPin, Compass } from "lucide-react";
 import { ParsedResume, EducationItem, ExperienceItem } from "../../types";
 
 // Custom inline SVG icons to prevent lucide-react brand icon version conflicts
@@ -57,25 +57,14 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
   const [editedPhone, setEditedPhone] = useState(parsedData.phone || "");
   const [editedLinkedin, setEditedLinkedin] = useState(parsedData.linkedin_url || "");
   const [editedGithub, setEditedGithub] = useState(parsedData.github_url || "");
+  const [editedLocation, setEditedLocation] = useState(parsedData.location || "");
+  const [editedEngagementMode, setEditedEngagementMode] = useState(parsedData.engagement_mode || "online");
   
   // Array states (formatted for editing text areas)
   const [editedSkills, setEditedSkills] = useState((parsedData.skills || []).join(", "));
   const [editedExperience, setEditedExperience] = useState(formatExperience(parsedData.experience));
   const [editedEducation, setEditedEducation] = useState(formatEducation(parsedData.education));
   const [editedCertifications, setEditedCertifications] = useState((parsedData.certifications || []).join(", "));
-
-  // Keep state sync with changes in parsedData (important for modal re-opens)
-  React.useEffect(() => {
-    setEditedName(parsedData.name || "");
-    setEditedEmail(parsedData.email || "");
-    setEditedPhone(parsedData.phone || "");
-    setEditedLinkedin(parsedData.linkedin_url || "");
-    setEditedGithub(parsedData.github_url || "");
-    setEditedSkills((parsedData.skills || []).join(", "));
-    setEditedExperience(formatExperience(parsedData.experience));
-    setEditedEducation(formatEducation(parsedData.education));
-    setEditedCertifications((parsedData.certifications || []).join(", "));
-  }, [parsedData]);
 
   const copyToClipboard = (text: string, fieldName: string) => {
     if (!text) return;
@@ -123,6 +112,8 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
       education: parsedEducation,
       experience: parsedExperience,
       certifications: editedCertifications.split(",").map((c) => c.trim()).filter(Boolean),
+      location: editedLocation.trim(),
+      engagement_mode: editedEngagementMode.trim(),
     };
     
     if (onSave) {
@@ -304,6 +295,34 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Location */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Location</label>
+              <input
+                type="text"
+                value={editedLocation}
+                onChange={(e) => setEditedLocation(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
+                placeholder="e.g. New York, NY"
+              />
+            </div>
+
+            {/* Engagement Mode */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Engagement Mode</label>
+              <select
+                value={editedEngagementMode}
+                onChange={(e) => setEditedEngagementMode(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
+              >
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
+          </div>
+
           {/* Skills */}
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Technical Skills (Comma separated)</label>
@@ -456,6 +475,36 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
                 {copiedField === "phone" ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
             )}
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center justify-between rounded-2xl border border-slate-100 p-3 bg-slate-50/30 hover:bg-slate-50 transition-colors group">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <MapPin className="h-4 w-4" />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Location</p>
+                <p className="text-xs font-medium text-slate-700 truncate">
+                  {parsedData.location || "No location parsed"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Engagement Mode */}
+          <div className="flex items-center justify-between rounded-2xl border border-slate-100 p-3 bg-slate-50/30 hover:bg-slate-50 transition-colors group">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Compass className="h-4 w-4" />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Engagement Mode</p>
+                <p className="text-xs font-medium text-slate-700 capitalize truncate">
+                  {parsedData.engagement_mode || "No mode parsed"}
+                </p>
+              </div>
+            </div>
           </div>
 
         </div>

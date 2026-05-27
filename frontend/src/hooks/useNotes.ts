@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notesService } from "../services/notes.service";
-import { Note } from "../types";
 
 export const useNotes = (candidateId: string | null) => {
   return useQuery({
@@ -50,5 +49,12 @@ export const useTimelineEvents = (candidateId: string | null) => {
     queryKey: ["timeline", candidateId],
     queryFn: () => (candidateId ? notesService.getEvents(candidateId) : []),
     enabled: !!candidateId,
+  });
+};
+
+export const useReminders = (days = 30) => {
+  return useQuery({
+    queryKey: ["reminders", days],
+    queryFn: () => notesService.getReminders(days),
   });
 };

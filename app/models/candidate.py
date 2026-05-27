@@ -34,6 +34,11 @@ class Candidate(Base):
     github_url: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[CandidateStatus] = mapped_column(Enum(CandidateStatus), default=CandidateStatus.IN_PROGRESS)
     resume_text: Mapped[str | None] = mapped_column(Text)
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    engagement_mode: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    salary_expectations: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    availability: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    resume_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

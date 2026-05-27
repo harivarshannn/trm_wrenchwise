@@ -61,13 +61,20 @@ class CandidateRepository:
         uploaded_to: Optional[datetime],
         offset: int,
         limit: int,
+        location: Optional[str] = None,
+        skills: Optional[str] = None,
+        engagement_mode: Optional[str] = None,
     ) -> tuple[Sequence[Candidate], int]:
         statement = select(Candidate)
         statement = self._apply_filters(
-            statement, query, status, has_linkedin, has_github, uploaded_from, uploaded_to
+            statement, query, status, has_linkedin, has_github, uploaded_from, uploaded_to,
+            location=location, skills=skills, engagement_mode=engagement_mode
         )
         total_statement = select(func.count()).select_from(
-            self._apply_filters(select(Candidate), query, status, has_linkedin, has_github, uploaded_from, uploaded_to).subquery()
+            self._apply_filters(
+                select(Candidate), query, status, has_linkedin, has_github, uploaded_from, uploaded_to,
+                location=location, skills=skills, engagement_mode=engagement_mode
+            ).subquery()
         )
 
         result = await self._session.execute(statement.offset(offset).limit(limit))
@@ -86,6 +93,9 @@ class CandidateRepository:
         has_github: Optional[bool],
         uploaded_from: Optional[datetime],
         uploaded_to: Optional[datetime],
+        location: Optional[str] = None,
+        skills: Optional[str] = None,
+        engagement_mode: Optional[str] = None,
     ) -> Select:
         if query:
             like_query = f"%{query}%"
@@ -108,6 +118,12 @@ class CandidateRepository:
             statement = statement.where(Candidate.github_url.isnot(None))
         if has_github is False:
             statement = statement.where(Candidate.github_url.is_(None))
+        if location:
+            statement = statement.where(Candidate.location.ilike(f"%{location}%"))
+        if engagement_mode:
+            statement = statement.where(Candidate.engagement_mode == engagement_mode)
+        if skills:
+            statement = statement.where(Candidate.resume_text.ilike(f"%{skills}%"))
         if uploaded_from:
             statement = statement.where(Candidate.created_at >= uploaded_from)
         if uploaded_to:

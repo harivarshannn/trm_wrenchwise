@@ -1,4 +1,3 @@
-import axios from "axios";
 import { apiClient } from "./api";
 import { CandidateEmail, EmailTemplate, EmailSendPayload } from "../types/email.types";
 
@@ -102,12 +101,6 @@ const getStoredLocalEmails = (): CandidateEmail[] => {
   if (typeof window === "undefined") return [];
   const stored = localStorage.getItem(EMAILS_STORAGE_KEY);
   return stored ? JSON.parse(stored) : [];
-};
-
-const saveStoredLocalEmails = (emails: CandidateEmail[]) => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(EMAILS_STORAGE_KEY, JSON.stringify(emails));
-  }
 };
 
 export const emailService = {

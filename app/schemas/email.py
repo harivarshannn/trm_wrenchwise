@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
@@ -17,6 +17,7 @@ class EmailSendRequest(BaseModel):
     custom_subject: Optional[str] = Field(default=None, max_length=255)
     custom_body: Optional[str] = Field(default=None, description="Optional custom rich text message to inject or use as body")
     variables: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Variables to render the Jinja2 template with")
+    followup_date: Optional[date] = None
 
 
 class EmailTemplateRead(BaseModel):

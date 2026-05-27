@@ -19,12 +19,32 @@ class CandidateBase(BaseModel):
     phone: Optional[str] = Field(default=None, max_length=50)
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
+    location: Optional[str] = None
+    engagement_mode: Optional[str] = None
+    salary_expectations: Optional[str] = None
+    availability: Optional[str] = None
+    resume_url: Optional[str] = None
 
 
 class CandidateCreate(CandidateBase):
     """Payload for candidate creation."""
 
     resume_text: Optional[str] = None
+
+
+class CandidateUpdate(BaseModel):
+    """Payload to update candidate details."""
+
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(default=None, max_length=50)
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+    location: Optional[str] = None
+    engagement_mode: Optional[str] = None
+    salary_expectations: Optional[str] = None
+    availability: Optional[str] = None
+    resume_url: Optional[str] = None
 
 
 class CandidateUpdateStatus(BaseModel):

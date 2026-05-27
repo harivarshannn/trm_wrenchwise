@@ -33,6 +33,9 @@ async def search_candidates(
     has_github: Optional[bool] = Query(default=None),
     uploaded_from: Optional[str] = Query(default=None),
     uploaded_to: Optional[str] = Query(default=None),
+    location: Optional[str] = Query(default=None),
+    skills: Optional[str] = Query(default=None),
+    engagement_mode: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     session: AsyncSession = Depends(get_session),
@@ -45,6 +48,9 @@ async def search_candidates(
         has_github=has_github,
         uploaded_from=_parse_datetime(uploaded_from),
         uploaded_to=_parse_datetime(uploaded_to),
+        location=location,
+        skills=skills,
+        engagement_mode=engagement_mode,
         page=page,
         limit=limit,
     )
@@ -57,7 +63,7 @@ async def search_candidates(
 
 
 import uuid
-from app.schemas.candidate import CandidateCreate, CandidateUpdateStatus
+from app.schemas.candidate import CandidateCreate, CandidateUpdate, CandidateUpdateStatus
 from app.schemas.activity import ActivityLogRead
 from app.services.candidate_service import CandidateService
 from app.services.activity_service import ActivityService
@@ -75,8 +81,23 @@ async def create_candidate(
         linkedin_url=payload.linkedin_url,
         github_url=payload.github_url,
         resume_text=payload.resume_text,
+        location=payload.location,
+        engagement_mode=payload.engagement_mode,
+        salary_expectations=payload.salary_expectations,
+        availability=payload.availability,
+        resume_url=payload.resume_url,
     )
     return APIResponse(success=True, message="Candidate created", data=CandidateRead.model_validate(candidate))
+
+
+@router.patch("/{candidate_id}", response_model=APIResponse[CandidateRead])
+async def update_candidate(
+    candidate_id: uuid.UUID,
+    payload: CandidateUpdate,
+    session: AsyncSession = Depends(get_session),
+):
+    candidate = await CandidateService(session).update_candidate(candidate_id, payload)
+    return APIResponse(success=True, message="Candidate updated", data=CandidateRead.model_validate(candidate))
 
 
 @router.patch("/{candidate_id}/status", response_model=APIResponse[CandidateRead])

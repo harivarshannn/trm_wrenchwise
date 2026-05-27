@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from datetime import date
+from typing import Optional, Sequence
 import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.candidate import Candidate
 from app.models.note import CandidateNote
 
 
@@ -45,3 +47,20 @@ class NotesRepository:
     async def delete(self, note: CandidateNote) -> None:
         await self._session.delete(note)
         await self._session.commit()
+
+    async def list_followups(
+        self,
+        start_date: date,
+        end_date: Optional[date] = None,
+    ) -> Sequence[tuple[CandidateNote, Candidate]]:
+        stmt = (
+            select(CandidateNote, Candidate)
+            .join(Candidate, Candidate.id == CandidateNote.candidate_id)
+            .where(CandidateNote.followup_date.is_not(None))
+            .where(CandidateNote.followup_date >= start_date)
+            .order_by(CandidateNote.followup_date.asc())
+        )
+        if end_date:
+            stmt = stmt.where(CandidateNote.followup_date <= end_date)
+        result = await self._session.execute(stmt)
+        return result.all()

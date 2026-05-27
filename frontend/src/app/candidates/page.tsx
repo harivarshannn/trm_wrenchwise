@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
-import { ColDef, GridReadyEvent, AllCommunityModule } from "ag-grid-community";
+import { ColDef, GridReadyEvent, AllCommunityModule, ICellRendererParams } from "ag-grid-community";
 import { Candidate, CandidateStatus } from "../../types";
 import FilterToolbar from "../../components/filters/filter-toolbar";
 import DetailsDrawer from "../../components/candidate/details-drawer";
@@ -49,19 +49,36 @@ export default function CandidatesPage() {
     status: normalizedStatus,
     hasLinkedin: false,
     hasGithub: false,
+    location: "",
+    skills: "",
+    engagementMode: "ALL",
   });
 
-  // Queries & Mutations
-  const { data: candidates = [], isLoading } = useCandidates(filters);
-  const deleteCandidateMutation = useDeleteCandidate();
-  const updateStatusMutation = useUpdateCandidateStatus();
-
-  useEffect(() => {
+  // Synchronize URL search parameter status updates dynamically
+  React.useEffect(() => {
+    const statusParam = searchParams.get("status");
+    const normalized =
+      statusParam === "in_progress" || statusParam === "selected" || statusParam === "rejected"
+        ? statusParam
+        : "ALL";
     setFilters((prev) => ({
       ...prev,
-      status: normalizedStatus,
+      status: normalized,
     }));
-  }, [normalizedStatus]);
+  }, [searchParams]);
+
+  // Queries & Mutations
+  const { data: candidates = [], isLoading } = useCandidates({
+    search: filters.search,
+    status: filters.status,
+    hasLinkedin: filters.hasLinkedin,
+    hasGithub: filters.hasGithub,
+    location: filters.location,
+    skills: filters.skills,
+    engagement_mode: filters.engagementMode === "ALL" ? undefined : filters.engagementMode,
+  });
+  const deleteCandidateMutation = useDeleteCandidate();
+  const updateStatusMutation = useUpdateCandidateStatus();
 
   // Selected state for sliding drawer
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
@@ -81,8 +98,8 @@ export default function CandidatesPage() {
   };
 
   // Custom Name Cell Renderer with initials-avatar
-  const NameCellRenderer = (params: any) => {
-    const name = params.value;
+  const NameCellRenderer = useCallback((params: ICellRendererParams<Candidate, string>) => {
+    const name = params.value || "";
     const initial = name ? name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() : "CV";
 
     return (
@@ -95,12 +112,13 @@ export default function CandidatesPage() {
         </span>
       </div>
     );
-  };
+  }, []);
 
   // 1. Custom Status Dropdown Cell Renderer
-  const StatusCellRenderer = (params: any) => {
+  const StatusCellRenderer = useCallback((params: ICellRendererParams<Candidate, CandidateStatus>) => {
+    if (!params.data) return null;
     const candidateId = params.data.id;
-    const currentStatus = params.value as CandidateStatus;
+    const currentStatus = params.value || "in_progress";
 
     return (
       <div className="relative inline-block w-full text-left">
@@ -110,7 +128,6 @@ export default function CandidatesPage() {
             updateStatusMutation.mutate({
               id: candidateId,
               status: e.target.value as CandidateStatus,
-              candidateName: params.data.name,
             });
           }}
           className={`appearance-none w-full border rounded-xl py-1 px-3 pr-8 text-xs font-bold uppercase tracking-wider cursor-pointer outline-none transition-all focus:ring-2 border-slate-100 focus:outline-none ${getStatusClasses(
@@ -126,12 +143,13 @@ export default function CandidatesPage() {
         </div>
       </div>
     );
-  };
+  }, [updateStatusMutation]);
 
   // 2. Custom Social Icons Cell Renderer
-  const SocialCellRenderer = (params: any) => {
+  const SocialCellRenderer = useCallback((params: ICellRendererParams<Candidate, string>) => {
+    if (!params.data) return null;
     const { linkedin_url, github_url } = params.data;
-    const isLinkedIn = params.colDef.field === "linkedin_url";
+    const isLinkedIn = params.colDef?.field === "linkedin_url";
     const url = isLinkedIn ? linkedin_url : github_url;
 
     if (!url) {
@@ -150,10 +168,11 @@ export default function CandidatesPage() {
         {isLinkedIn ? <Linkedin className="h-3.5 w-3.5" /> : <Github className="h-3.5 w-3.5" />}
       </a>
     );
-  };
+  }, []);
 
   // 3. Custom Action Buttons Cell Renderer
-  const ActionsCellRenderer = (params: any) => {
+  const ActionsCellRenderer = useCallback((params: ICellRendererParams<Candidate, string>) => {
+    if (!params.data) return null;
     const candidateId = params.data.id;
     const candidateName = params.data.name;
 
@@ -192,7 +211,7 @@ export default function CandidatesPage() {
         </button>
       </div>
     );
-  };
+  }, [deleteCandidateMutation]);
 
   // Define table columns
   const columnDefs = useMemo<ColDef<Candidate>[]>(
@@ -276,7 +295,7 @@ export default function CandidatesPage() {
         minWidth: 130,
       },
     ],
-    []
+    [ActionsCellRenderer, NameCellRenderer, SocialCellRenderer, StatusCellRenderer]
   );
 
   const defaultColDef = useMemo<ColDef>(
@@ -364,7 +383,7 @@ export default function CandidatesPage() {
       <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-3 text-[11px] font-semibold text-slate-400 shadow-sm leading-relaxed">
         <AlertCircle className="h-4 w-4 text-slate-400 flex-shrink-0" />
         <span>
-          Recruitment status updates are instantly computed into summary counts. Clicking a candidate's status badge opens inline options.
+          Recruitment status updates are instantly computed into summary counts. Clicking a candidate status badge opens inline options.
         </span>
       </div>
 

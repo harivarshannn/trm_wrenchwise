@@ -1,13 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { candidateService } from "../services/candidate.service";
 import { notesService } from "../services/notes.service";
-import { CandidateStatus, Candidate } from "../types";
+import { Candidate, CandidateStatus } from "../types";
 
 export const useCandidates = (filters?: {
   search?: string;
   status?: string;
   hasLinkedin?: boolean;
   hasGithub?: boolean;
+  location?: string;
+  skills?: string;
+  engagement_mode?: string;
 }) => {
   return useQuery({
     queryKey: ["candidates", filters],
@@ -28,7 +31,7 @@ export const useUpdateCandidateStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status, candidateName }: { id: string; status: CandidateStatus; candidateName: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: CandidateStatus }) => {
       const oldCandidate = await candidateService.getCandidateById(id);
       const oldStatus = oldCandidate ? oldCandidate.status : "Unknown";
       
@@ -74,5 +77,18 @@ export const useCheckDuplicate = () => {
   return useMutation({
     mutationFn: ({ email, linkedinUrl }: { email: string; linkedinUrl?: string }) =>
       candidateService.checkDuplicate(email, linkedinUrl),
+  });
+};
+
+export const useUpdateCandidate = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, updated }: { id: string; updated: Partial<Candidate> }) =>
+      candidateService.updateCandidate(id, updated),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["candidate", variables.id] });
+    },
   });
 };

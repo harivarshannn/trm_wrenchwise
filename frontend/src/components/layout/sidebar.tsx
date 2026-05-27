@@ -14,12 +14,12 @@ import {
   ChevronLeft,
   ChevronRight,
   BrainCircuit,
-  Menu,
-  X
+  X,
+  CalendarClock
 } from "lucide-react";
 import { NAVIGATION_ITEMS } from "../../constants";
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard: LayoutDashboard,
   Users: Users,
   UploadCloud: UploadCloud,
@@ -27,6 +27,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   MessageSquare: MessageSquare,
   BarChart3: BarChart3,
   Settings: Settings,
+  CalendarClock: CalendarClock,
 };
 
 interface SidebarProps {
