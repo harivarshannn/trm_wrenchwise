@@ -1,13 +1,34 @@
 @import "tailwindcss";
 
+@theme {
+  --color-blue-50: #f4f6fc;
+  --color-blue-100: #e8ebf7;
+  --color-blue-200: #c9d2ef;
+  --color-blue-500: #008D9B; /* Vibrant Teal/Cyan */
+  --color-blue-600: #2C3291; /* Corporate Navy Blue */
+  --color-blue-700: #1c205c; /* Hover Navy */
+  --color-blue-800: #101237;
+  --color-blue-900: #08091c;
+  
+  --color-indigo-600: #3C53E7; /* Electric Indigo */
+  --color-indigo-700: #2b3bb3;
+  
+  --color-green-50: #ecfdf5;
+  --color-green-100: #d1fae5;
+  --color-green-600: #00b67a; /* Wrench Emerald Success Green */
+  --color-green-700: #008f5f;
+  
+  --color-rose-600: #DA108B; /* Vivid tech pink */
+}
+
 :root {
   --background: #f8fafc; /* slate-50 */
   --foreground: #0f172a; /* slate-900 */
   
-  --primary: #2563eb; /* blue-600 */
-  --primary-hover: #1d4ed8; /* blue-700 */
+  --primary: #2C3291; /* Corporate Navy Blue */
+  --primary-hover: #1c205c;
   
-  --success: #16a34a; /* green-600 */
+  --success: #00b67a; /* Emerald green */
   --warning: #ca8a04; /* yellow-600 */
   --danger: #dc2626; /* red-600 */
   
@@ -32,9 +53,9 @@ body {
   --ag-header-column-separator-display: none;
   --ag-header-column-resize-handle-display: block;
   --ag-header-cell-hover-background-color: #f1f5f9;
-  --ag-selected-row-background-color: #eff6ff;
+  --ag-selected-row-background-color: #e8ebf7;
   --ag-row-hover-color: #f8fafc;
-  --ag-input-focus-border-color: #2563eb;
+  --ag-input-focus-border-color: #2C3291;
   --ag-card-radius: 16px;
   --ag-grid-size: 8px;
   --ag-row-height: 56px;
