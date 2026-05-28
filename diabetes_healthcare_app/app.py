@@ -252,6 +252,11 @@ def get_ml_assets():
             scaler = joblib.load(SCALER_FILE)
             # Recompute baseline metrics for displaying in dashboards
             df = pd.read_csv(DATA_URL)
+            # Preprocessing: Handle invalid zero entries for specific columns
+            zero_cols = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
+            for col in zero_cols:
+                median_val = df[df[col] > 0][col].median()
+                df[col] = df[col].replace(0, median_val)
             X = df.drop("Outcome", axis=1)
             y = df["Outcome"]
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
@@ -523,7 +528,11 @@ class RAGManager:
         
         encoder = self._get_encoder()
         query_vector = encoder.encode([query]).astype("float32")
-        distances, indices = self._index.search(query_vector, top_k)
+        # Fix FAISS search out-of-bounds error when top_k is greater than number of chunks
+        k = min(top_k, len(self._chunks))
+        if k == 0:
+            return []
+        distances, indices = self._index.search(query_vector, k)
         
         matches = []
         for idx, dist in zip(indices[0], distances[0]):
