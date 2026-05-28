@@ -148,7 +148,7 @@ def inject_custom_css(theme="light"):
     }}
     </style>
     """
-    st.markdown(css_style, unsafe_allowed_html=True)
+    st.markdown(css_style, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # DATABASE ORCHESTRATION (SQLITE)
@@ -629,13 +629,13 @@ with st.sidebar:
 # PAGE 1: DASHBOARD & PREDICTION VIEW
 # -----------------------------------------------------------------------------
 if page == "Dashboard & Prediction":
-    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>🩺 Diabetes Risk Screening & Prediction</h2>", unsafe_allowed_html=True)
+    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>🩺 Diabetes Risk Screening & Prediction</h2>", unsafe_allow_html=True)
     st.write("Input patient physiological parameters below to trigger a live risk evaluation, download PDF summaries, and review personalized care recommendations.")
     
     col_inputs, col_visuals = st.columns([3, 2])
     
     with col_inputs:
-        st.markdown("<div class='glass-card'>", unsafe_allowed_html=True)
+        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
         st.subheader("Patient Clinical Data")
         
         # User Demographics
@@ -661,13 +661,13 @@ if page == "Dashboard & Prediction":
             bmi = st.slider("Body Mass Index (BMI kg/m²)", 15.0, 67.0, value=27.5, step=0.1)
             pedigree = st.slider("Diabetes Pedigree Function Value", 0.08, 2.42, value=0.47, step=0.01)
             
-        st.markdown("</div>", unsafe_allowed_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         
         # Voice Input Placeholder (Extra feature)
-        st.markdown("<div class='glass-card' style='padding: 0.8rem;'>", unsafe_allowed_html=True)
+        st.markdown("<div class='glass-card' style='padding: 0.8rem;'>", unsafe_allow_html=True)
         st.caption("🎙️ **Voice Command Placeholder:** Click below to dictate patient clinical inputs (Coming in v2.5)")
         st.button("Record Clinical Dictation", disabled=True)
-        st.markdown("</div>", unsafe_allowed_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_visuals:
         # Trigger Live Prediction Model
@@ -728,18 +728,18 @@ if page == "Dashboard & Prediction":
         ))
         fig.update_layout(height=230, margin=dict(l=20, r=20, t=40, b=20), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         
-        st.markdown("<div class='glass-card'>", unsafe_allowed_html=True)
+        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
         st.subheader("Diagnostic Results Dashboard")
         st.plotly_chart(fig, use_container_width=True)
         
         # Display Status Cards
         col_res1, col_res2 = st.columns(2)
         with col_res1:
-            st.markdown(f"**Calculated Category:**<br><span class='{badge_class}'>{risk_level}</span>", unsafe_allowed_html=True)
+            st.markdown(f"**Calculated Category:**<br><span class='{badge_class}'>{risk_level}</span>", unsafe_allow_html=True)
         with col_res2:
-            st.markdown(f"**Clinically Diagnosed:**<br><span style='font-weight: 700; color: {risk_color};'>{'Positive' if is_diabetic else 'Negative'}</span>", unsafe_allowed_html=True)
+            st.markdown(f"**Clinically Diagnosed:**<br><span style='font-weight: 700; color: {risk_color};'>{'Positive' if is_diabetic else 'Negative'}</span>", unsafe_allow_html=True)
             
-        st.markdown("</div>", unsafe_allowed_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         
         # Database Storage Sync Action
         if st.button("💾 Commit Diagnostic Result to SQLite Audit"):
@@ -769,17 +769,17 @@ if page == "Dashboard & Prediction":
         )
 
     # Display dynamic suggestions list
-    st.markdown("<div class='glass-card'>", unsafe_allowed_html=True)
+    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     st.subheader("Personalized Lifestyle & Clinical Action Plan")
     for rec in recs:
         st.markdown(rec)
-    st.markdown("</div>", unsafe_allowed_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # PAGE 2: HEALTHCARE AI CHATBOT
 # -----------------------------------------------------------------------------
 elif page == "Healthcare AI Chatbot":
-    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>💬 Conversational Healthcare AI Assistant</h2>", unsafe_allowed_html=True)
+    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>💬 Conversational Healthcare AI Assistant</h2>", unsafe_allow_html=True)
     st.write("Discuss screening evaluations, query preventative protocols, and retrieve clinical guidelines with memory-retaining conversation pipelines.")
     
     # Setup conversation history state
@@ -842,13 +842,13 @@ elif page == "Healthcare AI Chatbot":
 # PAGE 3: RAG DOCUMENT FINDER
 # -----------------------------------------------------------------------------
 elif page == "RAG Document Finder":
-    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>📂 RAG Document Retrieval</h2>", unsafe_allowed_html=True)
+    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>📂 RAG Document Retrieval</h2>", unsafe_allow_html=True)
     st.write("Upload medical literature PDFs, parse content blocks, store text embeddings in a local FAISS database, and run semantic context-aware queries.")
     
     col_upload, col_query = st.columns([1, 2])
     
     with col_upload:
-        st.markdown("<div class='glass-card'>", unsafe_allowed_html=True)
+        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
         st.subheader("Ingest Medical PDFs")
         uploaded_file = st.file_uploader("Select PDF medical handbook/document", type=["pdf"])
         
@@ -874,10 +874,10 @@ elif page == "RAG Document Finder":
                         st.error("No valid text extracted from PDF pages.")
             except Exception as e:
                 st.error(f"Ingestion processing failure: {e}")
-        st.markdown("</div>", unsafe_allowed_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_query:
-        st.markdown("<div class='glass-card'>", unsafe_allowed_html=True)
+        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
         st.subheader("Semantic Search Interface")
         
         query_prompt = st.text_input(
@@ -905,13 +905,13 @@ elif page == "RAG Document Finder":
                     for i, match in enumerate(matches):
                         st.markdown(f"**Context Snippet {i+1}** (Distance score: {match['score']:.3f})")
                         st.info(match["text"])
-        st.markdown("</div>", unsafe_allowed_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # PAGE 4: DIAGNOSTIC AUDIT LOGS
 # -----------------------------------------------------------------------------
 elif page == "Diagnostic Audit Logs":
-    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>📊 Diagnostic Audit Logs & Statistics</h2>", unsafe_allowed_html=True)
+    st.markdown("<h2 style='font-weight: 800; color: #2C3291;'>📊 Diagnostic Audit Logs & Statistics</h2>", unsafe_allow_html=True)
     st.write("Browse patient records, check live SQLite auditing histories, download raw predictions spreadsheet logs, and analyze demographic spreads.")
     
     # Load all records
