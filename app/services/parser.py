@@ -35,6 +35,8 @@ class ResumeParser:
         linkedin_url = self._extract_linkedin(normalized_text)
         github_url = self._extract_github(normalized_text)
         name = self._extract_name(lines, email, phone, linkedin_url, github_url)
+        location = self._extract_location(normalized_text)
+        engagement_mode = self._extract_engagement_mode(normalized_text)
 
         sections = self._extract_sections(lines)
         raw_skills = sections.get("skills", [])
@@ -68,6 +70,8 @@ class ResumeParser:
             certifications=certifications,
             linkedin_url=linkedin_url,
             github_url=github_url,
+            location=location,
+            engagement_mode=engagement_mode,
         )
 
     @staticmethod
@@ -81,8 +85,65 @@ class ResumeParser:
 
     @staticmethod
     def _extract_phone(text: str) -> str | None:
+        # Find raw phone patterns
         match = re.search(r"(\+?\d[\d\s().-]{7,}\d)", text)
-        return match.group(1) if match else None
+        if not match:
+            return None
+        raw_phone = match.group(1)
+        # Strip all non-digit characters
+        digits = re.sub(r"\D", "", raw_phone)
+        # Handle prefixes
+        if len(digits) > 10 and (digits.startswith("91") or digits.startswith("091")):
+            # Strip 91 country code prefix (which is 2 characters) or 091 (3 characters)
+            if digits.startswith("091"):
+                digits = digits[3:]
+            else:
+                digits = digits[2:]
+        elif len(digits) > 10:
+            # Just take the last 10 digits
+            digits = digits[-10:]
+        
+        # Ensure it has exactly 10 digits or fallback to whatever digits we have
+        if len(digits) == 10:
+            return digits
+        return digits if len(digits) > 0 else None
+
+    @staticmethod
+    def _extract_location(text: str) -> str | None:
+        # 1. Look for explicit Location labels
+        label_pattern = re.compile(
+            r"\b(?:location|address|lives\s+in|residence|resides\s+in|city)\s*[:\-]\s*(?P<loc>[A-Za-z0-9\s,.-]{3,50})",
+            re.IGNORECASE
+        )
+        match = label_pattern.search(text)
+        if match:
+            loc = match.group("loc").strip()
+            loc = re.split(r'\n|, India| India', loc)[0].strip()
+            if loc and len(loc) > 2:
+                return loc.title()
+
+        # 2. Look for common cities
+        cities = [
+            "Bangalore", "Bengaluru", "Chennai", "Hyderabad", "Mumbai", "Pune", "Delhi", "Noida", 
+            "Gurugram", "Gurgaon", "Kolkata", "Ahmedabad", "Kochi", "Cochin", "Thiruvananthapuram", 
+            "Trivandrum", "Coimbatore", "Madurai", "Trichy", "Salem", "Vijayawada", "Visakhapatnam", 
+            "Vizag", "Jaipur", "Indore", "Bhopal", "Lucknow", "Patna", "Chandigarh", "Bhubaneswar"
+        ]
+        for city in cities:
+            if re.search(r"\b" + re.escape(city) + r"\b", text, re.IGNORECASE):
+                return city
+        return None
+
+    @staticmethod
+    def _extract_engagement_mode(text: str) -> str | None:
+        lowered = text.lower()
+        if "hybrid" in lowered:
+            return "hybrid"
+        if "remote" in lowered or "work from home" in lowered or "online" in lowered or "wfh" in lowered:
+            return "online"
+        if "on-site" in lowered or "onsite" in lowered or "in-office" in lowered or "offline" in lowered or "classroom" in lowered or "on site" in lowered:
+            return "offline"
+        return "hybrid"  # sensible default
 
     @staticmethod
     def _extract_linkedin(text: str) -> str | None:
@@ -261,10 +322,18 @@ class ResumeParser:
 
         items = []
         for idx in sorted(date_ranges):
-            _, _, duration = date_ranges[idx]
+            start_date_obj, end_date_obj, duration = date_ranges[idx]
             company, role = self._find_role_company(cleaned_lines, idx)
             if company or role:
-                items.append(ExperienceItem(company=company, role=role, years=duration))
+                items.append(
+                    ExperienceItem(
+                        company=company,
+                        role=role,
+                        years=duration,
+                        start_date=start_date_obj.isoformat(),
+                        end_date=end_date_obj.isoformat()
+                    )
+                )
 
         if not items:
             for line in cleaned_lines:

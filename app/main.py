@@ -72,12 +72,14 @@ def create_app() -> FastAPI:
     from app.api.notes import router as notes_router
     from app.api.search import router as search_router
     from app.api.emails import router as emails_router
+    from app.api.auth import router as auth_router
     from app.core.exceptions import DuplicateCandidateError, NotFoundError
 
     app.include_router(core_router)
     app.include_router(notes_router)
     app.include_router(search_router)
     app.include_router(emails_router)
+    app.include_router(auth_router)
 
     @app.exception_handler(DuplicateCandidateError)
     async def duplicate_candidate_exception_handler(request: Request, exc: DuplicateCandidateError) -> JSONResponse:

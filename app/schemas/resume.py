@@ -12,6 +12,8 @@ class ExperienceItem(BaseModel):
     company: Optional[str] = None
     role: Optional[str] = None
     years: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 class EducationItem(BaseModel):

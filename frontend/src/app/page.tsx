@@ -3,10 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { Users, Hourglass, CheckCircle2, XCircle, ArrowUpRight, ArrowRight, Sparkles, UserPlus } from "lucide-react";
-import { useCandidateStore } from "../hooks/useCandidateStore";
+import { useCandidates } from "../hooks/useCandidates";
 
 export default function DashboardPage() {
-  const { candidates } = useCandidateStore();
+  const { data: candidates = [] } = useCandidates();
 
   const total = candidates.length;
   const inProgress = candidates.filter(c => c.status === "in_progress").length;
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                         {cand.status.replace("_", " ")}
                       </span>
                       <Link
-                        href="/candidates"
+                        href={`/candidates?open=${cand.id}`}
                         className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-sm border border-transparent hover:border-slate-100 transition-all"
                       >
                         <ArrowUpRight className="h-4 w-4" />

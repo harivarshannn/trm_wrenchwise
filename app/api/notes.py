@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,7 +58,7 @@ async def list_reminders(
     days: int = Query(30, ge=1, le=365),
     session: AsyncSession = Depends(get_session),
 ):
-    start_date = date.today()
+    start_date = datetime.now()
     end_date = start_date + timedelta(days=days)
     reminders = await NotesService(session).list_reminders(start_date, end_date)
     return APIResponse(success=True, message="Reminders fetched", data=reminders)

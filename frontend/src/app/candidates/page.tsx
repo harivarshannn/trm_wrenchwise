@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import React, { useMemo, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
@@ -8,6 +10,7 @@ import { Candidate, CandidateStatus } from "../../types";
 import FilterToolbar from "../../components/filters/filter-toolbar";
 import DetailsDrawer from "../../components/candidate/details-drawer";
 import { useCandidates, useDeleteCandidate, useUpdateCandidateStatus } from "../../hooks/useCandidates";
+import { calculateTotalExperience } from "../../utils/experience";
 import {
   Eye,
   Edit2,
@@ -77,6 +80,15 @@ function CandidatesList() {
       ...prev,
       status: normalized,
     }));
+  }, [searchParams]);
+
+  // Auto-reveal details drawer if open query param matches a candidate
+  React.useEffect(() => {
+    const openId = searchParams.get("open");
+    if (openId) {
+      setSelectedCandidateId(openId);
+      setIsDrawerOpen(true);
+    }
   }, [searchParams]);
 
   // Queries & Mutations
@@ -168,9 +180,18 @@ function CandidatesList() {
       return <span className="text-slate-300 font-medium text-xs">N/A</span>;
     }
 
+    const getAbsoluteUrl = (u: string) => {
+      if (!u) return "";
+      const trimmed = u.trim();
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        return trimmed;
+      }
+      return `https://${trimmed}`;
+    };
+
     return (
       <a
-        href={url}
+        href={getAbsoluteUrl(url)}
         target="_blank"
         rel="noopener noreferrer"
         className={`inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-100 hover:bg-slate-50 transition-all shadow-sm ${
@@ -250,6 +271,17 @@ function CandidatesList() {
       {
         field: "phone",
         headerName: "Phone Number",
+        sortable: true,
+        filter: true,
+        flex: 1,
+        minWidth: 130,
+      },
+      {
+        headerName: "Total Experience",
+        valueGetter: (params) => {
+          if (!params.data?.experience) return "0 mos";
+          return calculateTotalExperience(params.data.experience);
+        },
         sortable: true,
         filter: true,
         flex: 1,

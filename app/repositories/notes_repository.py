@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Sequence
 import uuid
 
@@ -50,8 +50,8 @@ class NotesRepository:
 
     async def list_followups(
         self,
-        start_date: date,
-        end_date: Optional[date] = None,
+        start_date: datetime | date,
+        end_date: Optional[datetime | date] = None,
     ) -> Sequence[tuple[CandidateNote, Candidate]]:
         stmt = (
             select(CandidateNote, Candidate)

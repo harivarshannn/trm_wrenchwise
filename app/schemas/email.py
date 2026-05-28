@@ -17,7 +17,7 @@ class EmailSendRequest(BaseModel):
     custom_subject: Optional[str] = Field(default=None, max_length=255)
     custom_body: Optional[str] = Field(default=None, description="Optional custom rich text message to inject or use as body")
     variables: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Variables to render the Jinja2 template with")
-    followup_date: Optional[date] = None
+    followup_date: Optional[datetime] = None
 
 
 class EmailTemplateRead(BaseModel):

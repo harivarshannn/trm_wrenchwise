@@ -12,7 +12,7 @@ interface CandidateState {
 }
 
 export const useCandidateStore = create<CandidateState>((set, get) => ({
-  candidates: MOCK_CANDIDATES,
+  candidates: [],
   
   addCandidate: (candidate) =>
     set((state) => ({ candidates: [candidate, ...state.candidates] })),

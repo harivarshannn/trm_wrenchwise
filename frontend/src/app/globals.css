@@ -11,7 +11,7 @@
   --warning: #ca8a04; /* yellow-600 */
   --danger: #dc2626; /* red-600 */
   
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui;
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui;
 }
 
 body {

@@ -13,6 +13,8 @@ class ExperienceItem:
     company: Optional[str] = None
     role: Optional[str] = None
     years: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 @dataclass
@@ -36,6 +38,8 @@ class ParsedResume:
     certifications: List[str] = field(default_factory=list)
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
+    location: Optional[str] = None
+    engagement_mode: Optional[str] = None
 
     def to_dict(self) -> dict:
         """Return a serializable representation."""

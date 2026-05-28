@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Mail, Phone, Calendar, FileText, MessageSquare, Clock } from "lucide-react";
+import { X, Mail, Phone, Calendar, FileText, MessageSquare, Clock, User, Upload, Plus, Trash2, Edit, Check, AlertTriangle } from "lucide-react";
 import { Candidate, CandidateStatus } from "../../types";
 import { useNotes, useAddNote, useDeleteNote, useTimelineEvents } from "../../hooks/useNotes";
 import { useUpdateCandidateStatus, useUpdateCandidate } from "../../hooks/useCandidates";
@@ -11,6 +11,9 @@ import NotesSection from "../notes/notes-section";
 import ActivityTimeline from "../timeline/activity-timeline";
 import SendEmailModal from "../email/send-email-modal";
 import EmailTimeline from "../email/email-timeline";
+import { resumeApi } from "../../services/api";
+import { notesService } from "../../services/notes.service";
+import { ParsedResume } from "../../types";
 
 interface DetailsDrawerProps {
   candidateId: string | null;
@@ -35,11 +38,38 @@ const Github = ({ className }: { className?: string }) => (
 );
 
 export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsDrawerProps) {
-  const [activeTab, setActiveTab] = useState<"resume" | "notes" | "communication" | "timeline">("resume");
+  const [activeTab, setActiveTab] = useState<"resume" | "details" | "notes" | "communication" | "timeline">("resume");
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  
+  // Left column edit states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editLinkedin, setEditLinkedin] = useState("");
+  const [editGithub, setEditGithub] = useState("");
+
+  // Re-upload and Compare/Merge states
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [newResumeData, setNewResumeData] = useState<ParsedResume | null>(null);
+  const [showMergeOverlay, setShowMergeOverlay] = useState(false);
+  const [selectedNewSkills, setSelectedNewSkills] = useState<string[]>([]);
+  const [appendExperience, setAppendExperience] = useState(true);
+
   const candidate = useCandidateStore(
     (state) => state.candidates.find((c) => c.id === candidateId) || null
   );
+
+  // Sync state if candidate prop changes
+  React.useEffect(() => {
+    if (candidate) {
+      setEditName(candidate.name || "");
+      setEditEmail(candidate.email || "");
+      setEditPhone(candidate.phone || "");
+      setEditLinkedin(candidate.linkedin_url || "");
+      setEditGithub(candidate.github_url || "");
+    }
+  }, [candidate]);
 
   // Queries & Mutations
   const { data: notesList = [], isLoading: isLoadingNotes } = useNotes(candidateId);
@@ -47,6 +77,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
   const addNoteMutation = useAddNote();
   const deleteNoteMutation = useDeleteNote();
   const updateStatusMutation = useUpdateCandidateStatus();
+  const updateCandidateMutation = useUpdateCandidate();
 
   if (!isOpen || !candidateId) return null;
 
@@ -63,7 +94,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
     return addNoteMutation.mutateAsync({
       candidateId: candidateId,
       content,
-      recruiterName: "Jane Doe (HR Lead)", // Standard default recruiter
+      recruiterName: "Jane Doe (HR Lead)",
       followupDate,
     });
   };
@@ -73,6 +104,122 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
       noteId,
       candidateId: candidateId,
     });
+  };
+
+  const handleSaveBasicDetails = async () => {
+    if (candidate) {
+      await updateCandidateMutation.mutateAsync({
+        id: candidate.id,
+        updated: {
+          name: editName.trim() || undefined,
+          email: editEmail.trim() || undefined,
+          phone: editPhone.trim() || undefined,
+          linkedin_url: editLinkedin.trim() || undefined,
+          github_url: editGithub.trim() || undefined,
+        },
+      });
+      setIsEditing(false);
+    }
+  };
+
+  const handleUpdateField = async (field: keyof Candidate, value: any) => {
+    if (candidate) {
+      await updateCandidateMutation.mutateAsync({
+        id: candidate.id,
+        updated: {
+          [field]: value,
+        },
+      });
+    }
+  };
+
+  const handleUpdateResume = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !candidate) return;
+    setIsUploadingResume(true);
+    try {
+      const response = await resumeApi.upload(file);
+      if (response.success && response.parsed_data) {
+        const parsed = response.parsed_data;
+        setNewResumeData(parsed);
+        // Identify brand-new skills that are not already present
+        const oldSkills = candidate.skills || [];
+        const newSkills = parsed.skills || [];
+        const brandNew = newSkills.filter(
+          (s) => !oldSkills.some((os) => os.toLowerCase() === s.toLowerCase())
+        );
+        setSelectedNewSkills(brandNew);
+        setShowMergeOverlay(true);
+      } else {
+        alert("Failed to parse the new CV. Please check file formatting.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error uploading and analyzing resume.");
+    } finally {
+      setIsUploadingResume(false);
+    }
+  };
+
+  const handleMergeConfirm = async () => {
+    if (!candidate || !newResumeData) return;
+
+    const mergedSkills = [...(candidate.skills || [])];
+    selectedNewSkills.forEach((s) => {
+      if (!mergedSkills.some((ms) => ms.toLowerCase() === s.toLowerCase())) {
+        mergedSkills.push(s);
+      }
+    });
+
+    const updatedData: Partial<Candidate> = {
+      skills: mergedSkills,
+    };
+
+    if (newResumeData.resume_url) {
+      updatedData.resume_url = newResumeData.resume_url;
+    }
+
+    if (appendExperience && newResumeData.experience && newResumeData.experience.length > 0) {
+      const currentExp = [...(candidate.experience || [])];
+      newResumeData.experience.forEach((newExp) => {
+        const isDup = currentExp.some(
+          (ce) =>
+            ce.company?.toLowerCase() === newExp.company?.toLowerCase() &&
+            ce.role?.toLowerCase() === newExp.role?.toLowerCase()
+        );
+        if (!isDup) {
+          currentExp.push(newExp);
+        }
+      });
+      updatedData.experience = currentExp;
+    }
+
+    // Capture location or contact info if currently missing
+    if (!candidate.location && newResumeData.location) updatedData.location = newResumeData.location;
+    if (!candidate.phone && newResumeData.phone) updatedData.phone = newResumeData.phone;
+
+    await updateCandidateMutation.mutateAsync({
+      id: candidate.id,
+      updated: updatedData,
+    });
+
+    // Seed timeline log for CV merge
+    try {
+      await notesService.addEvent(
+        candidate.id,
+        "upload",
+        "Resume Merged Successfully",
+        `A newer resume version was uploaded. Brands new skills merged: ${
+          selectedNewSkills.join(", ") || "none"
+        }.`,
+        "Jane Doe (HR Lead)"
+      );
+    } catch (e) {
+      console.error("Timeline log failed:", e);
+    }
+
+    setShowMergeOverlay(false);
+    setNewResumeData(null);
   };
 
   const getStatusClasses = (status: CandidateStatus) => {
@@ -86,8 +233,18 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
     }
   };
 
+  const getAbsoluteUrl = (u?: string | null) => {
+    if (!u) return "";
+    const trimmed = u.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const tabs = [
     { id: "resume", name: "Resume Viewer", icon: <FileText className="h-3.5 w-3.5" /> },
+    { id: "details", name: "Parsed Details", icon: <User className="h-3.5 w-3.5" /> },
     { id: "notes", name: "Recruiter Notes", icon: <MessageSquare className="h-3.5 w-3.5" /> },
     { id: "communication", name: "Communication", icon: <Mail className="h-3.5 w-3.5" /> },
     { id: "timeline", name: "Activity Timeline", icon: <Clock className="h-3.5 w-3.5" /> },
@@ -117,12 +274,48 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             
             {/* Candidate Header Summary */}
             <div className="space-y-2">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white font-bold text-base shadow-md shadow-blue-500/20">
-                {candidate ? candidate.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase() : "CV"}
+              <div className="flex items-center justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white font-bold text-base shadow-md shadow-blue-500/20">
+                  {candidate ? candidate.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase() : "CV"}
+                </div>
+                
+                {/* Gated Edit Action */}
+                <button
+                  onClick={() => {
+                    if (isEditing) {
+                      handleSaveBasicDetails();
+                    } else {
+                      setIsEditing(true);
+                    }
+                  }}
+                  className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                >
+                  {isEditing ? (
+                    <>
+                      <Check className="h-3 w-3 text-green-600" />
+                      <span>Save</span>
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="h-3 w-3 text-slate-500" />
+                      <span>Edit Info</span>
+                    </>
+                  )}
+                </button>
               </div>
+
               <div>
                 <h3 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">
-                  {candidate ? candidate.name : "Anonymous Candidate"}
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                    />
+                  ) : (
+                    candidate ? candidate.name : "Anonymous Candidate"
+                  )}
                 </h3>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
                   Trainer Profile
@@ -158,54 +351,97 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             {/* Basic Info Rows */}
             {candidate && (
               <div className="space-y-4 pt-4 border-t border-slate-100">
-                
-                {/* Email Address */}
-                <div className="flex items-start gap-2.5 overflow-hidden">
-                  <Mail className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                  <div className="overflow-hidden">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Email Address</p>
-                    <p className="text-xs font-semibold text-slate-700 truncate" title={candidate.email}>
-                      {candidate.email}
-                    </p>
+                {isEditing ? (
+                  <div className="space-y-3.5">
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</label>
+                      <input
+                        type="text"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">LinkedIn Profile URL</label>
+                      <input
+                        type="text"
+                        value={editLinkedin}
+                        onChange={(e) => setEditLinkedin(e.target.value)}
+                        placeholder="linkedin.com/in/..."
+                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">GitHub Profile URL</label>
+                      <input
+                        type="text"
+                        value={editGithub}
+                        onChange={(e) => setEditGithub(e.target.value)}
+                        placeholder="github.com/..."
+                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Email Address */}
+                    <div className="flex items-start gap-2.5 overflow-hidden">
+                      <Mail className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                      <div className="overflow-hidden">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Email Address</p>
+                        <p className="text-xs font-semibold text-slate-700 truncate" title={candidate.email}>
+                          {candidate.email}
+                        </p>
+                      </div>
+                    </div>
 
-                {/* Phone Number */}
-                <div className="flex items-start gap-2.5">
-                  <Phone className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</p>
-                    <p className="text-xs font-semibold text-slate-700">{candidate.phone}</p>
-                  </div>
-                </div>
+                    {/* Phone Number */}
+                    <div className="flex items-start gap-2.5">
+                      <Phone className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</p>
+                        <p className="text-xs font-semibold text-slate-700">{candidate.phone || "N/A"}</p>
+                      </div>
+                    </div>
 
-                {/* Uploaded Date */}
-                <div className="flex items-start gap-2.5">
-                  <Calendar className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ingestion Date</p>
-                    <p className="text-xs font-semibold text-slate-700">
-                      {new Date(candidate.created_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </div>
-
+                    {/* Uploaded Date */}
+                    <div className="flex items-start gap-2.5">
+                      <Calendar className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ingestion Date</p>
+                        <p className="text-xs font-semibold text-slate-700">
+                          {new Date(candidate.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* Social profiles */}
-            {candidate && (
+            {!isEditing && candidate && (
               <div className="space-y-3 pt-4 border-t border-slate-100">
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Social profiles</p>
                 <div className="flex gap-2">
                   
                   {candidate.linkedin_url ? (
                     <a
-                      href={candidate.linkedin_url}
+                      href={getAbsoluteUrl(candidate.linkedin_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 hover:bg-blue-50/30 hover:border-blue-300 transition-all shadow-sm"
@@ -221,7 +457,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
 
                   {candidate.github_url ? (
                     <a
-                      href={candidate.github_url}
+                      href={getAbsoluteUrl(candidate.github_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
@@ -256,7 +492,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
         {/* ========================================== */}
         {/* RIGHT COLUMN: INTERACTIVE TABS WORKSPACE */}
         {/* ========================================== */}
-        <div className="flex-1 h-full flex flex-col min-w-0">
+        <div className="flex-1 h-full flex flex-col min-w-0 relative">
           
           {/* Glassmorphic Tabs Headers bar */}
           <div className="bg-white border-b border-slate-100 px-6 pt-4 flex items-center justify-between">
@@ -286,15 +522,237 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             
             {/* PDF Viewer Tab */}
             {activeTab === "resume" && candidate && (
-              <div className="h-full animate-in fade-in duration-200">
+              <div className="h-full space-y-4 animate-in fade-in duration-200">
+                {/* CV Action Row */}
+                <div className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-2xl">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-4 w-4 text-blue-500" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">Update Resume File</p>
+                      <p className="text-[10px] text-slate-400 font-medium">Re-upload resume to trigger comparison algorithms.</p>
+                    </div>
+                  </div>
+                  <label className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50">
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={handleUpdateResume}
+                      disabled={isUploadingResume}
+                      className="hidden"
+                    />
+                    {isUploadingResume ? "Scanning..." : "Update Resume"}
+                  </label>
+                </div>
+
                 <ResumeViewer resumeUrl={candidate.resume_url || undefined} candidateName={candidate.name} />
+              </div>
+            )}
+
+            {/* Parsed Details Tab */}
+            {activeTab === "details" && candidate && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <CandidatePreferencesWidget candidate={candidate} />
+                
+                {/* Technical Skills Badges */}
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Technical Skills
+                    </h4>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(candidate.skills || []).map((skill, sIdx) => (
+                      <span
+                        key={sIdx}
+                        className="inline-flex items-center gap-1 rounded-lg bg-blue-50/50 text-blue-600 px-2.5 py-1 text-[11px] font-semibold border border-blue-100/50 hover:bg-blue-100 hover:border-blue-200 transition-all"
+                      >
+                        {skill}
+                        {isEditing && (
+                          <button
+                            onClick={() => {
+                              const updatedSkills = (candidate.skills || []).filter((_, i) => i !== sIdx);
+                              handleUpdateField("skills", updatedSkills);
+                            }}
+                            className="text-blue-400 hover:text-blue-600 font-bold ml-1 transition-colors cursor-pointer"
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                    {isEditing && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const form = e.currentTarget;
+                          const input = form.elements.namedItem("newSkill") as HTMLInputElement;
+                          const newSkillVal = input.value.trim();
+                          if (newSkillVal) {
+                            const updatedSkills = [...(candidate.skills || []), newSkillVal];
+                            handleUpdateField("skills", updatedSkills);
+                            input.value = "";
+                          }
+                        }}
+                        className="inline-flex gap-1"
+                      >
+                        <input
+                          name="newSkill"
+                          type="text"
+                          placeholder="+ Add Skill"
+                          className="rounded-lg border border-slate-200 bg-white py-0.5 px-2 text-[11px] outline-none transition-all focus:border-blue-500 text-slate-800 font-medium placeholder-slate-400"
+                        />
+                      </form>
+                    )}
+                  </div>
+                </div>
+
+                {/* Certifications Section */}
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Certifications
+                    </h4>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(candidate.certifications || []).map((cert, cIdx) => (
+                      <span
+                        key={cIdx}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-50/50 text-emerald-600 px-2.5 py-1 text-[11px] font-semibold border border-emerald-100/50 hover:bg-emerald-100 hover:border-emerald-200 transition-all"
+                      >
+                        {cert}
+                        {isEditing && (
+                          <button
+                            onClick={() => {
+                              const updatedCerts = (candidate.certifications || []).filter((_, i) => i !== cIdx);
+                              handleUpdateField("certifications", updatedCerts);
+                            }}
+                            className="text-emerald-400 hover:text-emerald-600 font-bold ml-1 transition-colors cursor-pointer"
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                    {isEditing && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const form = e.currentTarget;
+                          const input = form.elements.namedItem("newCert") as HTMLInputElement;
+                          const newCertVal = input.value.trim();
+                          if (newCertVal) {
+                            const updatedCerts = [...(candidate.certifications || []), newCertVal];
+                            handleUpdateField("certifications", updatedCerts);
+                            input.value = "";
+                          }
+                        }}
+                        className="inline-flex gap-1"
+                      >
+                        <input
+                          name="newCert"
+                          type="text"
+                          placeholder="+ Add Cert"
+                          className="rounded-lg border border-slate-200 bg-white py-0.5 px-2 text-[11px] outline-none transition-all focus:border-emerald-500 text-slate-800 font-medium placeholder-slate-400"
+                        />
+                      </form>
+                    )}
+                  </div>
+                </div>
+
+                {/* Work Experience */}
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Work Experience
+                    </h4>
+                  </div>
+                  <div className="space-y-3">
+                    {(candidate.experience || []).length > 0 ? (
+                      (candidate.experience || []).map((exp, eIdx) => (
+                        <div key={eIdx} className="group relative rounded-xl border border-slate-100 bg-slate-50/20 p-3 hover:bg-slate-50/50 transition-colors">
+                          <div className="flex justify-between items-start gap-4">
+                            <div>
+                              <h5 className="text-xs font-bold text-slate-800">{exp.role || "Role Unspecified"}</h5>
+                              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">{exp.company || "Company Unspecified"}</p>
+                              {exp.start_date && exp.end_date && (
+                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
+                                  {new Date(exp.start_date).toLocaleDateString("en-US", { month: "short", year: "numeric" })} - {exp.end_date ? new Date(exp.end_date).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Present"}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                {exp.years || "Duration unknown"}
+                              </span>
+                              {isEditing && (
+                                <button
+                                  onClick={() => {
+                                    const updatedExp = (candidate.experience || []).filter((_, i) => i !== eIdx);
+                                    handleUpdateField("experience", updatedExp);
+                                  }}
+                                  className="text-red-400 hover:text-red-600 transition-colors cursor-pointer p-0.5 rounded-md hover:bg-red-50"
+                                  title="Delete Experience Entry"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">No experience history indexed.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Academic Background */}
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Academic Background
+                    </h4>
+                  </div>
+                  <div className="space-y-3">
+                    {(candidate.education || []).length > 0 ? (
+                      (candidate.education || []).map((edu, edIdx) => (
+                        <div key={edIdx} className="group relative rounded-xl border border-slate-100 bg-slate-50/20 p-3 hover:bg-slate-50/50 transition-colors">
+                          <div className="flex justify-between items-start gap-4">
+                            <div>
+                              <h5 className="text-xs font-bold text-slate-800">{edu.degree || "Degree Unspecified"}</h5>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                {edu.level || "UG/PG"}
+                              </span>
+                              {isEditing && (
+                                <button
+                                  onClick={() => {
+                                    const updatedEdu = (candidate.education || []).filter((_, i) => i !== edIdx);
+                                    handleUpdateField("education", updatedEdu);
+                                  }}
+                                  className="text-red-400 hover:text-red-600 transition-colors cursor-pointer p-0.5 rounded-md hover:bg-red-50"
+                                  title="Delete Education Entry"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">No academic items indexed.</p>
+                    )}
+                  </div>
+                </div>
+
               </div>
             )}
 
             {/* Recruiter Notes Tab */}
             {activeTab === "notes" && candidate && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                <CandidatePreferencesWidget candidate={candidate} />
                 <NotesSection
                   notes={notesList}
                   isLoading={isLoadingNotes}
@@ -334,6 +792,109 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             )}
 
           </div>
+
+          {/* ========================================== */}
+          {/* COMPARISON MERGE OVERLAY PANEL */}
+          {/* ========================================== */}
+          {showMergeOverlay && newResumeData && (
+            <div className="absolute inset-0 z-40 bg-slate-900/85 backdrop-blur-md p-6 flex flex-col justify-between animate-in fade-in slide-in-from-bottom duration-300">
+              <div className="space-y-6 overflow-y-auto max-h-[82%]">
+                <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Skills Compare & Merge</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">Verify newly parsed profile details and select what to merge.</p>
+                  </div>
+                </div>
+
+                {/* Compare Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* Left Column: Old Skills */}
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Existing Profile Skills</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(candidate?.skills || []).map((skill, idx) => (
+                        <span key={idx} className="bg-slate-900 text-slate-400 border border-slate-800 rounded-lg px-2 py-0.5 text-[10px] font-semibold">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right Column: New Scanned Skills */}
+                  <div className="rounded-2xl border border-blue-900/30 bg-slate-950 p-4 space-y-3">
+                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Brand New Scanned Skills</p>
+                    {selectedNewSkills.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedNewSkills.map((skill, idx) => (
+                          <label
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 bg-blue-950/40 text-blue-400 border border-blue-800/40 rounded-lg px-2.5 py-1 text-[10px] font-semibold cursor-pointer hover:bg-blue-900/20 transition-all select-none"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedNewSkills.includes(skill)}
+                              onChange={() => {
+                                setSelectedNewSkills(prev => 
+                                  prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]
+                                );
+                              }}
+                              className="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-800 h-3 w-3"
+                            />
+                            <span>{skill}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 italic">No new unique skills identified.</p>
+                    )}
+                  </div>
+
+                </div>
+
+                {/* Additional Settings */}
+                {newResumeData.experience && newResumeData.experience.length > 0 && (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-white">Merge Scanned Experiences</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Append newly extracted employment entries securely.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={appendExperience}
+                        onChange={(e) => setAppendExperience(e.target.checked)}
+                        className="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-800 h-4 w-4"
+                      />
+                    </label>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Action Rows */}
+              <div className="border-t border-slate-800 pt-4 flex justify-between items-center gap-3">
+                <button
+                  onClick={() => {
+                    setShowMergeOverlay(false);
+                    setNewResumeData(null);
+                  }}
+                  className="rounded-xl border border-slate-800 bg-white/5 hover:bg-white/10 px-4 py-2 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+                >
+                  Discard Updates
+                </button>
+                <button
+                  onClick={handleMergeConfirm}
+                  className="rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shadow-md shadow-blue-500/20"
+                >
+                  Merge & Apply Updates
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -404,7 +965,7 @@ function CandidatePreferencesWidget({ candidate }: { candidate: Candidate }) {
             type="text"
             value={editedLocation}
             onChange={(e) => setEditedLocation(e.target.value)}
-            placeholder="e.g. San Francisco, CA"
+            placeholder="e.g. Bangalore, KA"
             className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
           />
         </div>
@@ -434,7 +995,7 @@ function CandidatePreferencesWidget({ candidate }: { candidate: Candidate }) {
             type="text"
             value={editedSalary}
             onChange={(e) => setEditedSalary(e.target.value)}
-            placeholder="e.g. $120,000/yr"
+            placeholder="e.g. ₹15,00,000/yr"
             className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800"
           />
         </div>

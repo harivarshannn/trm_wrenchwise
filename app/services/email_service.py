@@ -140,7 +140,7 @@ class EmailService:
         custom_body: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
         sent_by: Optional[str] = "Jane Doe (HR Lead)",
-        followup_date: Optional[date] = None,
+        followup_date: Optional[datetime] = None,
     ) -> CandidateEmail:
         """Render, validate, log, and enqueue candidate email delivery."""
         candidate = await self._candidate_repo.get_by_id(candidate_id)

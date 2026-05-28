@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 import uuid
 
@@ -30,7 +30,7 @@ class NotesService:
         candidate_id: uuid.UUID,
         note: str,
         created_by: Optional[str] = None,
-        followup_date: Optional[date] = None,
+        followup_date: Optional[datetime] = None,
     ) -> CandidateNote:
         note_entity = CandidateNote(
             candidate_id=candidate_id,
@@ -71,7 +71,7 @@ class NotesService:
             description="Note deleted",
         )
 
-    async def list_reminders(self, start_date: date, end_date: Optional[date] = None):
+    async def list_reminders(self, start_date: datetime, end_date: Optional[datetime] = None):
         rows = await self._repo.list_followups(start_date, end_date)
         reminders = []
         for note, candidate in rows:

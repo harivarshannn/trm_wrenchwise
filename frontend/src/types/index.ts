@@ -9,6 +9,8 @@ export interface ExperienceItem {
   company: string | null;
   role: string | null;
   years: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
 }
 
 export interface Candidate {
