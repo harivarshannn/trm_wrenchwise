@@ -105,6 +105,7 @@ class CandidateService:
         selection_duration_months: Optional[int] = None,
         rejection_reason: Optional[str] = None,
         rejection_snooze_until: Optional[datetime] = None,
+        job_opening_id: Optional[uuid.UUID] = None,
         updated_by: Optional[str] = None,
     ) -> Candidate:
         candidate = await self._repo.get_by_id(candidate_id)
@@ -118,6 +119,8 @@ class CandidateService:
             candidate.selection_salary_per_month = selection_salary_per_month
             candidate.selection_role = selection_role
             candidate.selection_duration_months = selection_duration_months
+            if job_opening_id:
+                candidate.job_opening_id = job_opening_id
             candidate.rejection_reason = None
             candidate.rejection_snooze_until = None
             

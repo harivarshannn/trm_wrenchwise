@@ -118,6 +118,7 @@ async def update_candidate_status(
         selection_duration_months=payload.selection_duration_months,
         rejection_reason=payload.rejection_reason,
         rejection_snooze_until=payload.rejection_snooze_until,
+        job_opening_id=payload.job_opening_id,
     )
     return APIResponse(success=True, message="Status updated", data=CandidateRead.model_validate(candidate))
 

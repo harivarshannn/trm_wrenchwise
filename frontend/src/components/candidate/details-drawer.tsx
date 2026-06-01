@@ -994,12 +994,12 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
         />
       )}
 
-      {/* Pipeline Status Change Details Capture Modals */}
       {isSelectionModalOpen && (
         <SelectionModal
           isOpen={isSelectionModalOpen}
           candidateName={candidate.name}
           defaultRole={candidate.job_opening?.title || ""}
+          defaultJobOpeningId={candidate.job_opening_id}
           onConfirm={handleSelectionConfirm}
           onCancel={() => setIsSelectionModalOpen(false)}
         />

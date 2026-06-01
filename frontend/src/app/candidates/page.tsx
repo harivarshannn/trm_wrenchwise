@@ -464,6 +464,7 @@ function CandidatesList() {
           isOpen={isSelectionModalOpen}
           candidateName={selectedCandidate.name}
           defaultRole={selectedCandidate.job_opening?.title || ""}
+          defaultJobOpeningId={selectedCandidate.job_opening_id}
           onConfirm={async (data) => {
             await updateStatusMutation.mutateAsync({
               id: selectedCandidate.id,

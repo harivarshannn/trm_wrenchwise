@@ -66,6 +66,7 @@ class CandidateUpdateStatus(BaseModel):
     selection_duration_months: Optional[int] = None
     rejection_reason: Optional[str] = None
     rejection_snooze_until: Optional[datetime] = None
+    job_opening_id: Optional[uuid.UUID] = None
 
 
 # Lazy import to avoid circular dependency
