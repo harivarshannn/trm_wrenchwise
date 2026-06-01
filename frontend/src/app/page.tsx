@@ -2,16 +2,21 @@
 
 import React from "react";
 import Link from "next/link";
-import { Users, Hourglass, CheckCircle2, XCircle, ArrowUpRight, ArrowRight, Sparkles, UserPlus } from "lucide-react";
+import { Users, Hourglass, CheckCircle2, XCircle, ArrowUpRight, ArrowRight, Sparkles, UserPlus, Briefcase } from "lucide-react";
 import { useCandidates } from "../hooks/useCandidates";
+import { useJobs } from "../hooks/useJobs";
 
 export default function DashboardPage() {
   const { data: candidates = [] } = useCandidates();
+  const { data: jobs = [] } = useJobs();
 
   const total = candidates.length;
   const inProgress = candidates.filter(c => c.status === "in_progress").length;
   const selected = candidates.filter(c => c.status === "selected").length;
   const rejected = candidates.filter(c => c.status === "rejected").length;
+
+  const activeJobs = jobs.filter(j => j.status === "active").length;
+  const totalJobs = jobs.length;
 
   const recentCandidates = candidates.slice(0, 3);
 
@@ -247,6 +252,41 @@ export default function DashboardPage() {
             ) : (
               <div className="py-6 text-center text-xs text-slate-400 italic">No charts to display.</div>
             )}
+          </div>
+
+          <div className="border-t border-slate-100 pt-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-slate-800">Job Openings Overview</h3>
+              <Link
+                href="/jobs"
+                className="inline-flex items-center gap-0.5 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+              >
+                <span>Hiring Hub</span>
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/20 p-3.5 flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <Briefcase className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Active Postings</p>
+                  <p className="text-sm font-black text-slate-800 mt-0.5">{activeJobs}</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/20 p-3.5 flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                  <Users className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Roles</p>
+                  <p className="text-sm font-black text-slate-800 mt-0.5">{totalJobs}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="border-t border-slate-50 pt-5">

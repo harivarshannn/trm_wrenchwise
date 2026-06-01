@@ -9,6 +9,8 @@ import { ColDef, GridReadyEvent, AllCommunityModule, ICellRendererParams } from 
 import { Candidate, CandidateStatus } from "../../types";
 import FilterToolbar from "../../components/filters/filter-toolbar";
 import DetailsDrawer from "../../components/candidate/details-drawer";
+import SelectionModal from "../../components/modals/selection-modal";
+import RejectionModal from "../../components/modals/rejection-modal";
 import { useCandidates, useDeleteCandidate, useUpdateCandidateStatus } from "../../hooks/useCandidates";
 import { calculateTotalExperience } from "../../utils/experience";
 import {
@@ -107,6 +109,12 @@ function CandidatesList() {
   // Selected state for sliding drawer
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  
+  // Selection / Rejection Modal states inside candidate list
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  
   const gridRef = useRef<AgGridReact>(null);
 
   // Status badge style mapper
@@ -143,16 +151,26 @@ function CandidatesList() {
     if (!params.data) return null;
     const candidateId = params.data.id;
     const currentStatus = params.value || "in_progress";
+    const cand = params.data;
 
     return (
       <div className="relative inline-block w-full text-left">
         <select
           value={currentStatus}
           onChange={(e) => {
-            updateStatusMutation.mutate({
-              id: candidateId,
-              status: e.target.value as CandidateStatus,
-            });
+            const nextStatus = e.target.value as CandidateStatus;
+            if (nextStatus === "selected") {
+              setSelectedCandidate(cand);
+              setIsSelectionModalOpen(true);
+            } else if (nextStatus === "rejected") {
+              setSelectedCandidate(cand);
+              setIsRejectionModalOpen(true);
+            } else {
+              updateStatusMutation.mutate({
+                id: candidateId,
+                status: nextStatus,
+              });
+            }
           }}
           className={`appearance-none w-full border rounded-xl py-1 px-3 pr-8 text-xs font-bold uppercase tracking-wider cursor-pointer outline-none transition-all focus:ring-2 border-slate-100 focus:outline-none ${getStatusClasses(
             currentStatus
@@ -167,7 +185,7 @@ function CandidatesList() {
         </div>
       </div>
     );
-  }, [updateStatusMutation]);
+  }, [updateStatusMutation, setSelectedCandidate, setIsSelectionModalOpen, setIsRejectionModalOpen]);
 
   // 2. Custom Social Icons Cell Renderer
   const SocialCellRenderer = useCallback((params: ICellRendererParams<Candidate, string>) => {
@@ -440,6 +458,47 @@ function CandidatesList() {
           setSelectedCandidateId(null);
         }}
       />
+
+      {isSelectionModalOpen && selectedCandidate && (
+        <SelectionModal
+          isOpen={isSelectionModalOpen}
+          candidateName={selectedCandidate.name}
+          defaultRole={selectedCandidate.job_opening?.title || ""}
+          onConfirm={async (data) => {
+            await updateStatusMutation.mutateAsync({
+              id: selectedCandidate.id,
+              status: "selected",
+              ...data,
+            });
+            setIsSelectionModalOpen(false);
+            setSelectedCandidate(null);
+          }}
+          onCancel={() => {
+            setIsSelectionModalOpen(false);
+            setSelectedCandidate(null);
+          }}
+        />
+      )}
+
+      {isRejectionModalOpen && selectedCandidate && (
+        <RejectionModal
+          isOpen={isRejectionModalOpen}
+          candidateName={selectedCandidate.name}
+          onConfirm={async (data) => {
+            await updateStatusMutation.mutateAsync({
+              id: selectedCandidate.id,
+              status: "rejected",
+              ...data,
+            });
+            setIsRejectionModalOpen(false);
+            setSelectedCandidate(null);
+          }}
+          onCancel={() => {
+            setIsRejectionModalOpen(false);
+            setSelectedCandidate(null);
+          }}
+        />
+      )}
 
     </div>
   );
