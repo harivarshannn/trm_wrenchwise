@@ -1,7 +1,7 @@
 import axios, { type AxiosProgressEvent } from "axios";
 import { UploadResumeResponse } from "../types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://trm-wrenchwise-backend.onrender.com";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
