@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-blue-50: #f4f6fc;
-  --color-blue-100: #e8ebf7;
-  --color-blue-200: #c9d2ef;
-  --color-blue-500: #008D9B; /* Vibrant Teal/Cyan */
-  --color-blue-600: #2C3291; /* Corporate Navy Blue */
-  --color-blue-700: #1c205c; /* Hover Navy */
-  --color-blue-800: #101237;
-  --color-blue-900: #08091c;
+  --color-blue-50: #ecfdfb;
+  --color-blue-100: #d1faf5;
+  --color-blue-200: #a7f3eb;
+  --color-blue-500: #00bfa5; /* Wrench Wise Teal */
+  --color-blue-600: #008f7a; /* Deep Teal */
+  --color-blue-700: #006f61; /* Hover Teal */
+  --color-blue-800: #005046;
+  --color-blue-900: #00352e;
   
-  --color-indigo-600: #3C53E7; /* Electric Indigo */
-  --color-indigo-700: #2b3bb3;
+  --color-indigo-600: #00a38d; /* Accent Teal */
+  --color-indigo-700: #007a68;
   
   --color-green-50: #ecfdf5;
   --color-green-100: #d1fae5;
@@ -25,8 +25,8 @@
   --background: #f8fafc; /* slate-50 */
   --foreground: #0f172a; /* slate-900 */
   
-  --primary: #2C3291; /* Corporate Navy Blue */
-  --primary-hover: #1c205c;
+  --primary: #00bfa5; /* Wrench Wise Teal */
+  --primary-hover: #008f7a;
   
   --success: #00b67a; /* Emerald green */
   --warning: #ca8a04; /* yellow-600 */
@@ -55,7 +55,7 @@ body {
   --ag-header-cell-hover-background-color: #f1f5f9;
   --ag-selected-row-background-color: #e8ebf7;
   --ag-row-hover-color: #f8fafc;
-  --ag-input-focus-border-color: #2C3291;
+  --ag-input-focus-border-color: #00bfa5;
   --ag-card-radius: 16px;
   --ag-grid-size: 8px;
   --ag-row-height: 56px;

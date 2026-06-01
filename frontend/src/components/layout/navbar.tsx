@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Bell, Menu, LogOut, User, Settings, HelpCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { useAuthStore } from "../../hooks/useAuthStore";
 import { useReminders } from "../../hooks/useNotes";
 
@@ -72,9 +73,19 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="text-xl font-semibold text-slate-800 tracking-tight">
-          {getPageTitle()}
-        </h1>
+        <div className="flex items-center gap-2">
+          <Image
+            src="/logo.jpg"
+            alt="Wrench Wise logo"
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-lg border border-slate-100 bg-white p-1 object-contain shadow-sm"
+            priority
+          />
+          <h1 className="text-xl font-semibold text-slate-800 tracking-tight">
+            {getPageTitle()}
+          </h1>
+        </div>
       </div>
 
       {/* Right Side Tools */}

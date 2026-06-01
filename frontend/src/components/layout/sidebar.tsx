@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Users,
@@ -13,7 +14,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  BrainCircuit,
   X,
   CalendarClock
 } from "lucide-react";
@@ -100,8 +100,15 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
         {/* Header/Logo */}
         <div className="flex h-16 items-center justify-between border-b border-slate-50 px-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-blue-500 text-white shadow-sm shadow-blue-500/20">
-              <BrainCircuit className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-100 bg-white shadow-sm">
+              <Image
+                src="/logo.jpg"
+                alt="Wrench Wise logo"
+                width={28}
+                height={28}
+                className="h-7 w-7 object-contain"
+                priority
+              />
             </div>
             <span
               className={`font-semibold text-slate-900 tracking-tight text-lg transition-opacity duration-300 ${

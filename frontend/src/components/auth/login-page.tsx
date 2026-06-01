@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { KeyRound, ShieldAlert, Sparkles, UserPlus, LogIn, Loader2, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { ShieldAlert, Sparkles, UserPlus, LogIn, Loader2, CheckCircle2 } from "lucide-react";
 import { apiClient } from "../../services/api";
 
 interface LoginPageProps {
@@ -101,8 +102,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         
         {/* Portal Header branding */}
         <div className="text-center mb-8">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white mb-4 shadow-md shadow-blue-500/20">
-            <KeyRound className="h-6 w-6" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-white mb-4 shadow-md">
+            <Image
+              src="/logo.jpg"
+              alt="Wrench Wise logo"
+              width={36}
+              height={36}
+              className="h-9 w-9 object-contain"
+              priority
+            />
           </div>
           <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Wrenchwise TRMS</h2>
           <p className="text-xs text-slate-400 font-semibold mt-1 uppercase tracking-wider">Recruiter Portal Access</p>

@@ -12,6 +12,12 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Wrenchwise TRMS | Recruiter Portal",
   description: "Enterprise-grade Trainer Recruitment Management System. OCR automated resume parsing, recruitment tracking, and status operations.",
+  themeColor: "#00BFA5",
+  icons: {
+    icon: "/logo.jpg",
+    shortcut: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
