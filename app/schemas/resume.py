@@ -33,6 +33,7 @@ class ParsedData(BaseModel):
     education: List[EducationItem] = Field(default_factory=list)
     experience: List[ExperienceItem] = Field(default_factory=list)
     certifications: List[str] = Field(default_factory=list)
+    projects: List[str] = Field(default_factory=list)
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
     location: Optional[str] = None

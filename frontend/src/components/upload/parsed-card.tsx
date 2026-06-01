@@ -65,6 +65,7 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
   const [editedExperience, setEditedExperience] = useState(formatExperience(parsedData.experience));
   const [editedEducation, setEditedEducation] = useState(formatEducation(parsedData.education));
   const [editedCertifications, setEditedCertifications] = useState((parsedData.certifications || []).join(", "));
+  const [editedProjects, setEditedProjects] = useState((parsedData.projects || []).join("\n"));
 
   const copyToClipboard = (text: string, fieldName: string) => {
     if (!text) return;
@@ -112,6 +113,7 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
       education: parsedEducation,
       experience: parsedExperience,
       certifications: editedCertifications.split(",").map((c) => c.trim()).filter(Boolean),
+      projects: editedProjects.split("\n").map((line) => line.trim()).filter(Boolean),
       location: editedLocation.trim(),
       engagement_mode: editedEngagementMode.trim(),
     };
@@ -217,6 +219,32 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
           </ul>
         ) : (
           <p className="text-xs italic text-slate-400 pl-1">No experience details identified.</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderProjectsList = (list: string[]) => {
+    const icon = <ArrowRight className="h-3.5 w-3.5 text-blue-500" />;
+    const formattedList = (list || []).map((item) => item?.trim()).filter(Boolean);
+
+    return (
+      <div className="mb-6">
+        <div className="flex items-center gap-1.5 mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          {icon}
+          <span>Projects</span>
+        </div>
+        {formattedList.length > 0 ? (
+          <ul className="space-y-2.5 pl-1">
+            {formattedList.map((display, idx) => (
+              <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-600 leading-relaxed">
+                <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-500" />
+                <span>{display}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs italic text-slate-400 pl-1">No projects identified.</p>
         )}
       </div>
     );
@@ -358,6 +386,20 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
               rows={3}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800 leading-normal"
               placeholder="TechCorp — Senior Frontend Engineer — 3&#10;DevStudio — Software Engineer — 2"
+            />
+          </div>
+
+          {/* Projects */}
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              Projects (One item per line)
+            </label>
+            <textarea
+              value={editedProjects}
+              onChange={(e) => setEditedProjects(e.target.value)}
+              rows={3}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-xs outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 font-semibold text-slate-800 leading-normal"
+              placeholder="Attendance Tracker — Built a React + Node.js system&#10;Placement Analytics — Dashboard for recruiter KPIs"
             />
           </div>
 
@@ -577,6 +619,7 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
         {/* Dynamic Lists */}
         {renderBadgeList("Technical Skills", parsedData.skills, <Award className="h-3.5 w-3.5 text-blue-500" />, "No technical skills identified.")}
         {renderExperienceList(parsedData.experience)}
+        {renderProjectsList(parsedData.projects)}
         {renderEducationList(parsedData.education)}
         {renderBadgeList("Certifications & Licenses", parsedData.certifications, <BookOpen className="h-3.5 w-3.5 text-blue-500" />, "No certifications identified.")}
 

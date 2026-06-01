@@ -41,6 +41,7 @@ export interface ParsedResume {
   education: EducationItem[];
   experience: ExperienceItem[];
   certifications: string[];
+  projects: string[];
   linkedin_url: string | null;
   github_url: string | null;
   location?: string | null;

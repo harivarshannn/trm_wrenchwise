@@ -52,6 +52,7 @@ class ResumeParser:
         experience = self._extract_experience(sections.get("experience", []))
         raw_certs = sections.get("certifications", [])
         certifications = self._extract_certifications(raw_certs)
+        projects = self._extract_projects(sections.get("projects", []))
         if self._certifications_refiner:
             try:
                 refined_certs = self._certifications_refiner(raw_certs)
@@ -68,6 +69,7 @@ class ResumeParser:
             education=education,
             experience=experience,
             certifications=certifications,
+            projects=projects,
             linkedin_url=linkedin_url,
             github_url=github_url,
             location=location,
@@ -112,7 +114,7 @@ class ResumeParser:
     def _extract_location(text: str) -> str | None:
         # 1. Look for explicit Location labels
         label_pattern = re.compile(
-            r"\b(?:location|address|lives\s+in|residence|resides\s+in|city)\s*[:\-]\s*(?P<loc>[A-Za-z0-9\s,.-]{3,50})",
+            r"\b(?:location|address|lives\s+in|residence|resides\s+in|city)\s*[:\-]\s*(?P<loc>[A-Za-z0-9 ,.-]{3,50})",
             re.IGNORECASE
         )
         match = label_pattern.search(text)
@@ -129,9 +131,10 @@ class ResumeParser:
             "Trivandrum", "Coimbatore", "Madurai", "Trichy", "Salem", "Vijayawada", "Visakhapatnam", 
             "Vizag", "Jaipur", "Indore", "Bhopal", "Lucknow", "Patna", "Chandigarh", "Bhubaneswar"
         ]
-        for city in cities:
-            if re.search(r"\b" + re.escape(city) + r"\b", text, re.IGNORECASE):
-                return city
+        header_city = ResumeParser._find_city_match(text[:1200], cities)
+        if header_city:
+            return header_city
+        return ResumeParser._find_city_match(text, cities)
         return None
 
     @staticmethod
@@ -304,6 +307,14 @@ class ResumeParser:
                 if verb_pattern.search(token) and word_count > 2:
                     continue
                 items.append(token)
+        return self._unique_list(items)
+
+    def _extract_projects(self, lines: list[str]) -> list[str]:
+        items: list[str] = []
+        for line in lines:
+            cleaned = self._clean_section_line(line)
+            if cleaned:
+                items.append(cleaned)
         return self._unique_list(items)
 
     def _extract_experience(self, lines: list[str]) -> list[ExperienceItem]:
@@ -606,6 +617,19 @@ class ResumeParser:
         if any(token in lowered for token in pg_tokens):
             return "PG"
         return None
+
+    @staticmethod
+    def _find_city_match(text: str, cities: list[str]) -> Optional[str]:
+        lowered = text.lower()
+        best_match: tuple[int, str] | None = None
+        for city in cities:
+            pattern = r"\b" + re.escape(city.lower()) + r"\b"
+            match = re.search(pattern, lowered)
+            if not match:
+                continue
+            if best_match is None or match.start() < best_match[0]:
+                best_match = (match.start(), city)
+        return best_match[1] if best_match else None
 
     @staticmethod
     def _unique_list(items: list[str]) -> list[str]:

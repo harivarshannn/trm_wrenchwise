@@ -36,6 +36,7 @@ class ParsedResume:
     education: List[EducationItem] = field(default_factory=list)
     experience: List[ExperienceItem] = field(default_factory=list)
     certifications: List[str] = field(default_factory=list)
+    projects: List[str] = field(default_factory=list)
     linkedin_url: Optional[str] = None
     github_url: Optional[str] = None
     location: Optional[str] = None
