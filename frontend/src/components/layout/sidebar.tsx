@@ -101,23 +101,23 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
       >
         {/* Header/Logo */}
         <div className="flex h-16 items-center justify-between border-b border-slate-50 px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-150 bg-white shadow-sm overflow-hidden flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-150 bg-white shadow-sm overflow-hidden flex-shrink-0">
               <Image
                 src="/logo.jpg"
                 alt="Wrench Wise logo"
-                width={36}
-                height={36}
-                className="h-9 w-9 object-contain rounded-xl"
+                width={44}
+                height={44}
+                className="h-11 w-11 object-contain rounded-xl"
                 priority
               />
             </div>
             <span
-              className={`font-bold text-slate-900 tracking-tight text-lg transition-opacity duration-300 ${
+              className={`font-black text-blue-600 tracking-wider text-xl transition-opacity duration-300 ${
                 isCollapsed ? "lg:opacity-0 lg:w-0 lg:overflow-hidden" : "opacity-100"
               }`}
             >
-              Wrenchwise <span className="text-blue-600 font-extrabold">TRMS</span>
+              TRMS
             </span>
           </div>
 
