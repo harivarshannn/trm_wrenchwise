@@ -18,13 +18,20 @@ class PdfTextExtractor:
 
     def extract_text(self, pdf_bytes: bytes) -> str:
         """Extract text from PDF bytes, with optional fallback."""
-        primary_text = self._extract_with_pymupdf(pdf_bytes)
-        if len(primary_text.strip()) >= self._min_text_length:
-            return primary_text
+        primary_text = ""
+        try:
+            primary_text = self._extract_with_pymupdf(pdf_bytes)
+            if len(primary_text.strip()) >= self._min_text_length:
+                return primary_text
+        except Exception as e:
+            self._logger.error(f"PyMuPDF text extraction failed: {e}")
 
-        fallback_text = self._extract_with_pdfplumber(pdf_bytes)
-        if len(fallback_text.strip()) > len(primary_text.strip()):
-            return fallback_text
+        try:
+            fallback_text = self._extract_with_pdfplumber(pdf_bytes)
+            if len(fallback_text.strip()) > len(primary_text.strip()):
+                return fallback_text
+        except Exception as e:
+            self._logger.error(f"pdfplumber text extraction failed: {e}")
 
         return primary_text
 

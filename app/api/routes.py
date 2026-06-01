@@ -32,54 +32,66 @@ async def health_check(request: Request) -> dict:
 @router.post("/api/resume/upload", response_model=UploadResumeResponse)
 async def upload_resume(request: Request, file: UploadFile = File(...)) -> UploadResumeResponse:
     """Handle resume upload, OCR, and parsing."""
-    validate_upload_file(file.filename, file.content_type)
-    settings = request.app.state.settings
+    try:
+        validate_upload_file(file.filename, file.content_type)
+        settings = request.app.state.settings
 
-    content = await read_upload_bytes(file, settings.max_file_size_mb * 1024 * 1024)
-    await file.close()
-    if not content:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+        content = await read_upload_bytes(file, settings.max_file_size_mb * 1024 * 1024)
+        await file.close()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-    # Save original file to uploads/ directory
-    import os
-    import uuid
-    os.makedirs("uploads", exist_ok=True)
-    file_ext = os.path.splitext(file.filename or "")[1] or ".pdf"
-    unique_filename = f"{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join("uploads", unique_filename)
-    with open(file_path, "wb") as f:
-        f.write(content)
-    
-    resume_url = f"/uploads/{unique_filename}"
+        # Save original file to uploads/ directory
+        import os
+        import uuid
+        os.makedirs("uploads", exist_ok=True)
+        file_ext = os.path.splitext(file.filename or "")[1] or ".pdf"
+        unique_filename = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join("uploads", unique_filename)
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
+        resume_url = f"/uploads/{unique_filename}"
 
-    raw_text = ""
-    ocr_confidence = None
-
-    if is_pdf(file.filename, file.content_type):
-        extractor = request.app.state.pdf_extractor
-        raw_text = await asyncio.to_thread(extractor.extract_text, content)
+        raw_text = ""
         ocr_confidence = None
-        if not raw_text or len(raw_text.strip()) < 10:
+
+        if is_pdf(file.filename, file.content_type):
+            extractor = request.app.state.pdf_extractor
+            raw_text = await asyncio.to_thread(extractor.extract_text, content)
+            ocr_confidence = None
+            if not raw_text or len(raw_text.strip()) < 10:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Unable to extract text. This appears to be a scanned PDF (image only) or has no selectable text. Please upload a digital text PDF, as OCR services are currently disabled."
+                )
+        else:
             raise HTTPException(
                 status_code=400,
-                detail="Unable to extract text. This appears to be a scanned PDF (image only) or has no selectable text. Please upload a digital text PDF, as OCR services are currently disabled."
+                detail="Image upload is disabled because Google Cloud Vision OCR is currently inactive. Please upload a digital text PDF."
             )
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Image upload is disabled because Google Cloud Vision OCR is currently inactive. Please upload a digital text PDF."
+
+        parser = request.app.state.parser
+        parsed_resume = await asyncio.to_thread(parser.parse, raw_text)
+
+        # Convert to dict and add resume_url
+        parsed_dict = parsed_resume.to_dict()
+        parsed_dict["resume_url"] = resume_url
+
+        return UploadResumeResponse(
+            success=True,
+            raw_text=raw_text,
+            parsed_data=ParsedData(**parsed_dict),
+            ocr_confidence=ocr_confidence,
         )
-
-    parser = request.app.state.parser
-    parsed_resume = await asyncio.to_thread(parser.parse, raw_text)
-
-    # Convert to dict and add resume_url
-    parsed_dict = parsed_resume.to_dict()
-    parsed_dict["resume_url"] = resume_url
-
-    return UploadResumeResponse(
-        success=True,
-        raw_text=raw_text,
-        parsed_data=ParsedData(**parsed_dict),
-        ocr_confidence=ocr_confidence,
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        from app.utils.logger import get_logger
+        logger = get_logger("UploadRoute")
+        logger.error(f"Error during resume upload: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unhandled error occurred during resume parsing: {str(e)}"
+        )
