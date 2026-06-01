@@ -77,9 +77,9 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
           <Image
             src="/logo.jpg"
             alt="Wrench Wise logo"
-            width={36}
-            height={36}
-            className="h-9 w-9 rounded-lg border border-slate-100 bg-white p-1 object-contain shadow-sm"
+            width={38}
+            height={38}
+            className="h-9.5 w-9.5 rounded-xl border border-slate-150 bg-white p-0.5 object-contain shadow-sm"
             priority
           />
           <h1 className="text-xl font-semibold text-slate-800 tracking-tight">
