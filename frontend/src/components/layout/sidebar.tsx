@@ -99,34 +99,34 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
       >
-        {/* Header/Logo */}
-        <div className="flex flex-col px-6 py-5 border-b border-slate-50 gap-3 flex-shrink-0 relative">
-          <div className="flex items-center justify-between w-full">
-            {/* Logo - No box container, just the image itself, nice and big */}
-            <div className="h-14 w-14 flex items-center justify-center overflow-hidden">
-              <Image
-                src="/logo.jpg"
-                alt="Wrench Wise logo"
-                width={56}
-                height={56}
-                className="h-14 w-14 object-contain rounded-2xl"
-                priority
-              />
-            </div>
-            
-            {/* Close button inside drawer for mobile */}
-            <button
-              onClick={() => setIsMobileOpen(false)}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 lg:hidden focus:outline-none"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        {/* Header/Logo - Vertical stack perfectly centered, borderless, no container box */}
+        <div className={`flex flex-col items-center justify-center border-b border-slate-50 gap-2 flex-shrink-0 relative transition-all duration-300 ${
+          isCollapsed ? "px-2 py-4" : "px-6 py-6"
+        }`}>
+          {/* Logo Container - centered and sized dynamically */}
+          <div className="flex items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="Wrench Wise logo"
+              width={isCollapsed ? 44 : 88}
+              height={isCollapsed ? 44 : 88}
+              className="object-contain transition-all duration-300"
+              priority
+            />
           </div>
-          
-          {/* TRMS text on the next line */}
+
+          {/* Close button inside drawer for mobile (positioned absolutely on the right) */}
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 lg:hidden focus:outline-none"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          {/* TRMS text on the next line - perfectly centered and vertically aligned */}
           <span
-            className={`font-black text-blue-600 tracking-widest text-lg transition-all duration-300 leading-none ${
-              isCollapsed ? "lg:opacity-0 lg:w-0 lg:overflow-hidden" : "opacity-100"
+            className={`font-black text-blue-600 tracking-widest text-center transition-all duration-300 leading-none ${
+              isCollapsed ? "lg:opacity-0 lg:h-0 lg:overflow-hidden text-xs mt-0" : "opacity-100 text-xl mt-2"
             }`}
           >
             TRMS

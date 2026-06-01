@@ -13,9 +13,9 @@ export const metadata: Metadata = {
   description: "Enterprise-grade Trainer Recruitment Management System. OCR automated resume parsing, recruitment tracking, and status operations.",
   themeColor: "#00BFA5",
   icons: {
-    icon: "/logo.jpg",
-    shortcut: "/logo.jpg",
-    apple: "/logo.jpg",
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

@@ -102,13 +102,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         
         {/* Portal Header branding */}
         <div className="text-center mb-8">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-white mb-4 shadow-md">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center mb-4">
             <Image
-              src="/logo.jpg"
+              src="/logo.png"
               alt="Wrench Wise logo"
-              width={36}
-              height={36}
-              className="h-9 w-9 object-contain"
+              width={64}
+              height={64}
+              className="h-16 w-16 object-contain"
               priority
             />
           </div>

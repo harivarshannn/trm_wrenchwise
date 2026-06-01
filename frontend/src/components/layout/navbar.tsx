@@ -75,11 +75,11 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
         </button>
         <div className="flex items-center gap-2">
           <Image
-            src="/logo.jpg"
+            src="/logo.png"
             alt="Wrench Wise logo"
             width={38}
             height={38}
-            className="h-9.5 w-9.5 rounded-xl border border-slate-150 bg-white p-0.5 object-contain shadow-sm"
+            className="h-9.5 w-9.5 object-contain"
             priority
           />
           <h1 className="text-xl font-semibold text-slate-800 tracking-tight">
