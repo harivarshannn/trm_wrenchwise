@@ -372,7 +372,7 @@ class ResumeParser:
             return False
         if normalized.isupper() or normalized == normalized.title():
             return True
-        return re.match(r"^[A-Za-z0-9][A-Za-z0-9 .&/+()\\-:]+$", normalized) is not None
+        return re.match(r"^[A-Za-z0-9][A-Za-z0-9 .&/+()\\:-]+$", normalized) is not None
 
     def _summarize_project(self, title: str, desc_lines: list[str], skills: list[str]) -> str:
         description = " ".join(desc_lines)
