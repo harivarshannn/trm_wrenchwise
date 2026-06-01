@@ -52,7 +52,7 @@ class ResumeParser:
         experience = self._extract_experience(sections.get("experience", []))
         raw_certs = sections.get("certifications", [])
         certifications = self._extract_certifications(raw_certs)
-        projects = self._extract_projects(sections.get("projects", []))
+        projects = self._extract_projects(sections.get("projects", []), skills)
         if self._certifications_refiner:
             try:
                 refined_certs = self._certifications_refiner(raw_certs)
@@ -309,13 +309,119 @@ class ResumeParser:
                 items.append(token)
         return self._unique_list(items)
 
-    def _extract_projects(self, lines: list[str]) -> list[str]:
+    def _extract_projects(self, lines: list[str], skills: list[str]) -> list[str]:
         items: list[str] = []
+        current_title: Optional[str] = None
+        current_desc: list[str] = []
+
         for line in lines:
             cleaned = self._clean_section_line(line)
-            if cleaned:
-                items.append(cleaned)
+            if not cleaned:
+                continue
+            if self._is_project_date_line(cleaned):
+                continue
+            if self._is_project_title(cleaned):
+                if current_title:
+                    summary = self._summarize_project(current_title, current_desc, skills)
+                    if summary:
+                        items.append(summary)
+                current_title = cleaned
+                current_desc = []
+                continue
+            if current_title:
+                current_desc.append(cleaned)
+
+        if current_title:
+            summary = self._summarize_project(current_title, current_desc, skills)
+            if summary:
+                items.append(summary)
+
         return self._unique_list(items)
+
+    @staticmethod
+    def _is_project_date_line(line: str) -> bool:
+        if re.search(r"\b\d{1,2}/\d{4}\b", line):
+            return True
+        return re.search(r"\b\d{4}\b\s*(?:-|–|to)\s*(?:\d{4}|present|current)\b", line, re.IGNORECASE) is not None
+
+    @staticmethod
+    def _is_project_title(line: str) -> bool:
+        normalized = re.sub(r"[–—]", "-", line).strip()
+        if len(normalized) < 3 or len(normalized) > 90:
+            return False
+        if normalized.endswith("."):
+            return False
+        if ResumeParser._is_project_date_line(normalized):
+            return False
+        verb_starters = (
+            "engineered",
+            "built",
+            "designed",
+            "implemented",
+            "preprocessed",
+            "trained",
+            "applied",
+            "developed",
+            "optimized",
+            "used",
+        )
+        lowered = normalized.lower()
+        if lowered.startswith(verb_starters):
+            return False
+        if len(normalized.split()) > 10:
+            return False
+        if normalized.isupper() or normalized == normalized.title():
+            return True
+        return re.match(r"^[A-Za-z0-9][A-Za-z0-9 .&/+()\\-:]+$", normalized) is not None
+
+    def _summarize_project(self, title: str, desc_lines: list[str], skills: list[str]) -> str:
+        description = " ".join(desc_lines)
+        technologies = self._extract_project_technologies(f"{title} {description}", skills)
+        if technologies:
+            return f"{title} — {', '.join(technologies)}"
+        return title
+
+    def _extract_project_technologies(self, text: str, skills: list[str]) -> list[str]:
+        patterns: list[tuple[str, str]] = [
+            (r"\bcomputer vision\b", "Computer Vision"),
+            (r"\bmachine learning\b", "Machine Learning"),
+            (r"\bdeep learning\b", "Deep Learning"),
+            (r"\bseq2seq\b", "Seq2Seq"),
+            (r"\battention\b", "Attention"),
+            (r"\bpytorch\b", "PyTorch"),
+            (r"\btensorflow\b", "TensorFlow"),
+            (r"\bkeras\b", "Keras"),
+            (r"\bopen\s?cv\b", "OpenCV"),
+            (r"\bllms?\b|\blarge language model\b", "LLM"),
+            (r"\bnlp\b", "NLP"),
+            (r"\bollama\b", "Ollama"),
+            (r"\btf-?idf\b", "TF-IDF"),
+            (r"\bspeech[- ]to[- ]text\b", "Speech-to-Text"),
+            (r"\bgoogle(?:'s)? speech[- ]to[- ]text\b", "Google Speech-to-Text"),
+            (r"\bpython\b", "Python"),
+            (r"\breact\b", "React"),
+            (r"\bnode\.?js\b", "Node.js"),
+            (r"\bnext\.?js\b", "Next.js"),
+            (r"\bfastapi\b", "FastAPI"),
+            (r"\bpostgresql\b", "PostgreSQL"),
+        ]
+
+        detected: list[str] = []
+        for pattern, label in patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                detected.append(label)
+
+        lowered = text.lower()
+        for skill in skills:
+            if not skill:
+                continue
+            trimmed = skill.strip()
+            if not trimmed or len(trimmed) > 30:
+                continue
+            if re.search(r"\b" + re.escape(trimmed.lower()) + r"\b", lowered):
+                detected.append(trimmed)
+
+        return self._unique_list(detected)
 
     def _extract_experience(self, lines: list[str]) -> list[ExperienceItem]:
         cleaned_lines: list[str] = []
