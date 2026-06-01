@@ -28,6 +28,7 @@ class CandidateBase(BaseModel):
     education: Optional[list[dict]] = None
     experience: Optional[list[dict]] = None
     certifications: Optional[list[str]] = None
+    job_opening_id: Optional[uuid.UUID] = None
 
 
 class CandidateCreate(CandidateBase):
@@ -53,12 +54,22 @@ class CandidateUpdate(BaseModel):
     education: Optional[list[dict]] = None
     experience: Optional[list[dict]] = None
     certifications: Optional[list[str]] = None
+    job_opening_id: Optional[uuid.UUID] = None
 
 
 class CandidateUpdateStatus(BaseModel):
     """Payload for status updates."""
 
     status: CandidateStatus
+    selection_salary_per_month: Optional[str] = None
+    selection_role: Optional[str] = None
+    selection_duration_months: Optional[int] = None
+    rejection_reason: Optional[str] = None
+    rejection_snooze_until: Optional[datetime] = None
+
+
+# Lazy import to avoid circular dependency
+from app.schemas.job import JobOpeningRead
 
 
 class CandidateRead(CandidateBase):
@@ -66,6 +77,12 @@ class CandidateRead(CandidateBase):
 
     id: uuid.UUID
     status: CandidateStatus
+    selection_salary_per_month: Optional[str] = None
+    selection_role: Optional[str] = None
+    selection_duration_months: Optional[int] = None
+    rejection_reason: Optional[str] = None
+    rejection_snooze_until: Optional[datetime] = None
+    job_opening: Optional[JobOpeningRead] = None
     created_at: datetime
     updated_at: datetime
 

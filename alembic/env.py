@@ -37,6 +37,19 @@ def get_url():
                 "DATABASE_URL environment variable is missing and alembic.ini "
                 "contains the default placeholder. Please set DATABASE_URL."
             )
+    # Convert internal Render DB URL to external if running locally
+    if url and not os.getenv("RENDER"):
+        import re
+        if "@dpg-" in url and ".render.com" not in url:
+            url = re.sub(
+                r'@(dpg-[a-z0-9]+-a)(?=[:/])',
+                r'@\1.oregon-postgres.render.com',
+                url
+            )
+            if "ssl=require" not in url:
+                separator = "&" if "?" in url else "?"
+                url = f"{url}{separator}ssl=require"
+    print("Resolved DATABASE_URL for migration:", url)
     return url
 
 def run_migrations_offline() -> None:
@@ -72,6 +85,7 @@ async def run_async_migrations() -> None:
     connectable = create_async_engine(
         url,
         poolclass=pool.NullPool,
+        connect_args={"ssl": True} if "ssl=require" in url or "render.com" in url else {}
     )
 
     async with connectable.connect() as connection:

@@ -1,4 +1,4 @@
-import { Candidate, CandidateStatus, ParsedResume, EducationItem, ExperienceItem } from "../types";
+import { Candidate, CandidateStatus, ParsedResume, EducationItem, ExperienceItem, JobOpening } from "../types";
 import { useCandidateStore } from "../hooks/useCandidateStore";
 import { apiClient } from "./api";
 
@@ -23,6 +23,13 @@ type CandidateApiResponse = {
   education?: EducationItem[] | null;
   experience?: ExperienceItem[] | null;
   certifications?: string[] | null;
+  job_opening_id?: string | null;
+  selection_salary_per_month?: string | null;
+  selection_role?: string | null;
+  selection_duration_months?: number | null;
+  rejection_reason?: string | null;
+  rejection_snooze_until?: string | null;
+  job_opening?: JobOpening | null;
 };
 
 type ApiResponse<T> = {
@@ -52,6 +59,13 @@ const mapApiCandidate = (
   salary_expectations: candidate.salary_expectations || parsed?.salary_expectations || null,
   availability: candidate.availability || parsed?.availability || null,
   resume_url: candidate.resume_url || parsed?.resume_url || null,
+  job_opening_id: candidate.job_opening_id || null,
+  selection_salary_per_month: candidate.selection_salary_per_month || null,
+  selection_role: candidate.selection_role || null,
+  selection_duration_months: candidate.selection_duration_months || null,
+  rejection_reason: candidate.rejection_reason || null,
+  rejection_snooze_until: candidate.rejection_snooze_until || null,
+  job_opening: candidate.job_opening || null,
 });
 
 export const candidateService = {
@@ -213,10 +227,21 @@ export const candidateService = {
     return result;
   },
 
-  updateCandidateStatus: async (id: string, status: CandidateStatus): Promise<Candidate> => {
+  updateCandidateStatus: async (
+    id: string,
+    status: CandidateStatus,
+    extra?: {
+      selection_salary_per_month?: string;
+      selection_role?: string;
+      selection_duration_months?: number;
+      rejection_reason?: string;
+      rejection_snooze_until?: string | null;
+    }
+  ): Promise<Candidate> => {
     try {
       const response = await apiClient.patch<ApiResponse<CandidateApiResponse>>(`/api/candidates/${id}/status`, {
         status,
+        ...extra,
       });
 
       if (response.data.success) {
@@ -230,7 +255,7 @@ export const candidateService = {
 
     await delay(200);
     const store = useCandidateStore.getState();
-    store.updateCandidate(id, { status });
+    store.updateCandidate(id, { status, ...extra });
     const updated = store.candidates.find((c) => c.id === id);
     if (!updated) throw new Error("Candidate not found.");
     return updated;

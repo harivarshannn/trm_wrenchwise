@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  CalendarClock
+  CalendarClock,
+  Briefcase
 } from "lucide-react";
 import { NAVIGATION_ITEMS } from "../../constants";
 
@@ -28,6 +29,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   BarChart3: BarChart3,
   Settings: Settings,
   CalendarClock: CalendarClock,
+  Briefcase: Briefcase,
 };
 
 interface SidebarProps {

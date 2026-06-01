@@ -13,6 +13,16 @@ export interface ExperienceItem {
   end_date?: string | null;
 }
 
+export interface JobOpening {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  created_at: string;
+  total_candidates?: number;
+  accepted_candidates?: number;
+}
+
 export interface Candidate {
   id: string;
   name: string;
@@ -31,6 +41,13 @@ export interface Candidate {
   salary_expectations?: string | null;
   availability?: string | null;
   resume_url?: string | null;
+  job_opening_id?: string | null;
+  selection_salary_per_month?: string | null;
+  selection_role?: string | null;
+  selection_duration_months?: number | null;
+  rejection_reason?: string | null;
+  rejection_snooze_until?: string | null;
+  job_opening?: JobOpening | null;
 }
 
 export interface ParsedResume {

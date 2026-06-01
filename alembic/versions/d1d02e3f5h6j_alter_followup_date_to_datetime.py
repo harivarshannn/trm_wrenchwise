@@ -20,6 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        return
     op.alter_column(
         "candidate_notes",
         "followup_date",
@@ -32,6 +35,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        return
     op.alter_column(
         "candidate_notes",
         "followup_date",

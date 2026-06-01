@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Mail, Phone, Calendar, FileText, MessageSquare, Clock, User, Upload, Plus, Trash2, Edit, Check, AlertTriangle } from "lucide-react";
+import { X, Mail, Phone, Calendar, FileText, MessageSquare, Clock, User, Upload, Plus, Trash2, Edit, Check, AlertTriangle, ArrowLeft } from "lucide-react";
 import { Candidate, CandidateStatus } from "../../types";
 import { useNotes, useAddNote, useDeleteNote, useTimelineEvents } from "../../hooks/useNotes";
 import { useUpdateCandidateStatus, useUpdateCandidate } from "../../hooks/useCandidates";
@@ -11,6 +11,9 @@ import NotesSection from "../notes/notes-section";
 import ActivityTimeline from "../timeline/activity-timeline";
 import SendEmailModal from "../email/send-email-modal";
 import EmailTimeline from "../email/email-timeline";
+import SelectionModal from "../modals/selection-modal";
+import RejectionModal from "../modals/rejection-modal";
+import { useJobs } from "../../hooks/useJobs";
 import { resumeApi } from "../../services/api";
 import { notesService } from "../../services/notes.service";
 import { ParsedResume } from "../../types";
@@ -56,9 +59,15 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
   const [selectedNewSkills, setSelectedNewSkills] = useState<string[]>([]);
   const [appendExperience, setAppendExperience] = useState(true);
 
+  // Status-change Selection/Rejection Modal states
+  const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+
   const candidate = useCandidateStore(
     (state) => state.candidates.find((c) => c.id === candidateId) || null
   );
+
+  const { data: jobs = [] } = useJobs();
 
   // Sync state if candidate prop changes
   React.useEffect(() => {
@@ -79,15 +88,44 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
   const updateStatusMutation = useUpdateCandidateStatus();
   const updateCandidateMutation = useUpdateCandidate();
 
-  if (!isOpen || !candidateId) return null;
+  if (!isOpen || !candidateId || !candidate) return null;
 
-  const handleStatusChange = async (newStatus: CandidateStatus) => {
-    if (candidate) {
-      await updateStatusMutation.mutateAsync({
+  const handleStatusChange = (newStatus: CandidateStatus) => {
+    if (newStatus === "selected") {
+      setIsSelectionModalOpen(true);
+    } else if (newStatus === "rejected") {
+      setIsRejectionModalOpen(true);
+    } else {
+      updateStatusMutation.mutateAsync({
         id: candidate.id,
         status: newStatus,
       });
     }
+  };
+
+  const handleSelectionConfirm = async (data: {
+    selection_salary_per_month: string;
+    selection_role: string;
+    selection_duration_months: number;
+  }) => {
+    await updateStatusMutation.mutateAsync({
+      id: candidate.id,
+      status: "selected",
+      ...data,
+    });
+    setIsSelectionModalOpen(false);
+  };
+
+  const handleRejectionConfirm = async (data: {
+    rejection_reason: string;
+    rejection_snooze_until: string | null;
+  }) => {
+    await updateStatusMutation.mutateAsync({
+      id: candidate.id,
+      status: "rejected",
+      ...data,
+    });
+    setIsRejectionModalOpen(false);
   };
 
   const handleAddNote = async (content: string, followupDate?: string) => {
@@ -107,35 +145,31 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
   };
 
   const handleSaveBasicDetails = async () => {
-    if (candidate) {
-      await updateCandidateMutation.mutateAsync({
-        id: candidate.id,
-        updated: {
-          name: editName.trim() || undefined,
-          email: editEmail.trim() || undefined,
-          phone: editPhone.trim() || undefined,
-          linkedin_url: editLinkedin.trim() || undefined,
-          github_url: editGithub.trim() || undefined,
-        },
-      });
-      setIsEditing(false);
-    }
+    await updateCandidateMutation.mutateAsync({
+      id: candidate.id,
+      updated: {
+        name: editName.trim() || undefined,
+        email: editEmail.trim() || undefined,
+        phone: editPhone.trim() || undefined,
+        linkedin_url: editLinkedin.trim() || undefined,
+        github_url: editGithub.trim() || undefined,
+      },
+    });
+    setIsEditing(false);
   };
 
   const handleUpdateField = async (field: keyof Candidate, value: any) => {
-    if (candidate) {
-      await updateCandidateMutation.mutateAsync({
-        id: candidate.id,
-        updated: {
-          [field]: value,
-        },
-      });
-    }
+    await updateCandidateMutation.mutateAsync({
+      id: candidate.id,
+      updated: {
+        [field]: value,
+      },
+    });
   };
 
   const handleUpdateResume = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !candidate) return;
+    if (!file) return;
     setIsUploadingResume(true);
     try {
       const response = await resumeApi.upload(file);
@@ -162,7 +196,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
   };
 
   const handleMergeConfirm = async () => {
-    if (!candidate || !newResumeData) return;
+    if (!newResumeData) return;
 
     const mergedSkills = [...(candidate.skills || [])];
     selectedNewSkills.forEach((s) => {
@@ -251,24 +285,38 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
   ] as const;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-sm p-0 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col h-screen w-screen overflow-hidden font-sans animate-in fade-in duration-200">
       
-      {/* Sliding Side sheet content */}
-      <div className="w-full max-w-4xl bg-white h-full flex flex-col md:flex-row shadow-2xl overflow-hidden animate-in slide-in-from-right duration-300">
-        
-        {/* CLOSE BUTTON */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 focus:outline-none transition-all cursor-pointer shadow-sm"
-          title="Close Panel"
-        >
-          <X className="h-4.5 w-4.5" />
-        </button>
+      {/* Dynamic Header Workspace Bar */}
+      <div className="w-full bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800 shadow-md flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2 text-xs font-bold text-white shadow-sm border border-slate-700 transition-all cursor-pointer"
+            title="Return to list"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>← Back to Candidates list</span>
+          </button>
+          <div className="h-5 w-px bg-slate-800 hidden sm:block" />
+          <h1 className="text-sm font-bold tracking-tight text-slate-100 uppercase hidden sm:block">
+            Candidate Evaluation Workspace
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 bg-slate-800/60 px-3 py-1 rounded-lg border border-slate-800">
+            Recruiter Focus
+          </span>
+        </div>
+      </div>
 
+      {/* Main Full-Screen Split Workspace Grid */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full bg-slate-50">
+        
         {/* ========================================== */}
         {/* LEFT COLUMN: BASIC INFORMATION CARD PANEL */}
         {/* ========================================== */}
-        <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50/40 p-6 flex flex-col overflow-y-auto h-full justify-between">
+        <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-200 bg-white p-6 flex flex-col overflow-y-auto h-full justify-between shadow-xs flex-shrink-0">
           
           <div className="space-y-6">
             
@@ -276,7 +324,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white font-bold text-base shadow-md shadow-blue-500/20">
-                  {candidate ? candidate.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase() : "CV"}
+                  {candidate.name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()}
                 </div>
                 
                 {/* Gated Edit Action */}
@@ -314,12 +362,42 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
                       className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
                     />
                   ) : (
-                    candidate ? candidate.name : "Anonymous Candidate"
+                    candidate.name
                   )}
                 </h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
-                  Trainer Profile
-                </p>
+
+                {/* Job Opening Badge Selector */}
+                {isEditing ? (
+                  <div className="mt-2.5">
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Assigned Job Role
+                    </label>
+                    <select
+                      value={candidate.job_opening_id || ""}
+                      onChange={(e) => handleUpdateField("job_opening_id", e.target.value || null)}
+                      className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500 cursor-pointer"
+                    >
+                      <option value="">No Active Job Opening</option>
+                      {jobs.map((job) => (
+                        <option key={job.id} value={job.id}>
+                          {job.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  candidate.job_opening ? (
+                    <div className="inline-flex items-center gap-1.5 mt-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-xl border border-blue-100 text-xs font-bold shadow-xs">
+                      <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                      <span>Applied Role: {candidate.job_opening.title}</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 mt-2 bg-slate-100 text-slate-500 px-3 py-1 rounded-xl border border-slate-200 text-xs font-bold">
+                      <span className="h-2 w-2 rounded-full bg-slate-400" />
+                      <span>Unassigned Role</span>
+                    </div>
+                  )
+                )}
               </div>
             </div>
 
@@ -328,113 +406,163 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
               <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Recruitment status
               </label>
-              {candidate && (
-                <div className="relative">
-                  <select
-                    value={candidate.status}
-                    onChange={(e) => handleStatusChange(e.target.value as CandidateStatus)}
-                    className={`appearance-none w-full border rounded-xl py-2 px-3 pr-8 text-xs font-bold uppercase tracking-wider cursor-pointer outline-none transition-all focus:ring-2 border-slate-100 focus:outline-none ${getStatusClasses(
-                      candidate.status
-                    )}`}
-                  >
-                    <option value="in_progress">In Progress</option>
-                    <option value="selected">Selected</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
-                    <Clock className="h-3.5 w-3.5" />
-                  </div>
+              <div className="relative">
+                <select
+                  value={candidate.status}
+                  onChange={(e) => handleStatusChange(e.target.value as CandidateStatus)}
+                  className={`appearance-none w-full border rounded-xl py-2 px-3 pr-8 text-xs font-bold uppercase tracking-wider cursor-pointer outline-none transition-all focus:ring-2 border-slate-100 focus:outline-none ${getStatusClasses(
+                    candidate.status
+                  )}`}
+                >
+                  <option value="in_progress">In Progress</option>
+                  <option value="selected">Selected</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+                  <Clock className="h-3.5 w-3.5" />
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Basic Info Rows */}
-            {candidate && (
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                {isEditing ? (
-                  <div className="space-y-3.5">
-                    <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
-                      <input
-                        type="email"
-                        value={editEmail}
-                        onChange={(e) => setEditEmail(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</label>
-                      <input
-                        type="text"
-                        value={editPhone}
-                        onChange={(e) => setEditPhone(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">LinkedIn Profile URL</label>
-                      <input
-                        type="text"
-                        value={editLinkedin}
-                        onChange={(e) => setEditLinkedin(e.target.value)}
-                        placeholder="linkedin.com/in/..."
-                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">GitHub Profile URL</label>
-                      <input
-                        type="text"
-                        value={editGithub}
-                        onChange={(e) => setEditGithub(e.target.value)}
-                        placeholder="github.com/..."
-                        className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
-                      />
-                    </div>
+            {/* Offer details Banners */}
+            {candidate.status === "selected" && (
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 space-y-2 shadow-xs animate-in slide-in-from-top-2 duration-200">
+                <h4 className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Selection Offer Details
+                </h4>
+                <div className="grid grid-cols-1 gap-1.5 text-[11px] font-semibold text-slate-700">
+                  <div className="flex justify-between py-1 border-b border-emerald-100/50">
+                    <span className="text-slate-400">Offered Role</span>
+                    <span className="text-slate-800">{candidate.selection_role || "Unspecified"}</span>
                   </div>
-                ) : (
-                  <>
-                    {/* Email Address */}
-                    <div className="flex items-start gap-2.5 overflow-hidden">
-                      <Mail className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div className="overflow-hidden">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Email Address</p>
-                        <p className="text-xs font-semibold text-slate-700 truncate" title={candidate.email}>
-                          {candidate.email}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Phone Number */}
-                    <div className="flex items-start gap-2.5">
-                      <Phone className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</p>
-                        <p className="text-xs font-semibold text-slate-700">{candidate.phone || "N/A"}</p>
-                      </div>
-                    </div>
-
-                    {/* Uploaded Date */}
-                    <div className="flex items-start gap-2.5">
-                      <Calendar className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ingestion Date</p>
-                        <p className="text-xs font-semibold text-slate-700">
-                          {new Date(candidate.created_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
+                  <div className="flex justify-between py-1 border-b border-emerald-100/50">
+                    <span className="text-slate-400">Monthly Salary</span>
+                    <span className="text-emerald-700 font-bold">{candidate.selection_salary_per_month || "Unspecified"}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-slate-400">Contract Duration</span>
+                    <span className="text-slate-800">{candidate.selection_duration_months ? `${candidate.selection_duration_months} Months` : "Unspecified"}</span>
+                  </div>
+                </div>
               </div>
             )}
 
+            {/* Rejection/Snooze details Banners */}
+            {candidate.status === "rejected" && (
+              <div className="rounded-2xl border border-red-100 bg-red-50/50 p-4 space-y-2 shadow-xs animate-in slide-in-from-top-2 duration-200">
+                <h4 className="text-[10px] font-bold text-red-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  Rejection Status Info
+                </h4>
+                <div className="text-[11px] font-semibold text-slate-700 space-y-2">
+                  <div className="bg-white border border-red-100/50 p-2.5 rounded-xl text-slate-700">
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Reason Specified</p>
+                    <p className="mt-0.5 leading-relaxed font-semibold">{candidate.rejection_reason || "None specified."}</p>
+                  </div>
+                  {candidate.rejection_snooze_until && (
+                    <div className="flex justify-between items-center bg-white border border-slate-100 p-2 rounded-xl text-[10px]">
+                      <span className="text-slate-400 font-bold uppercase tracking-wider">Snoozed Until</span>
+                      <span className="text-red-600 font-bold">
+                        {new Date(candidate.rejection_snooze_until).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Basic Info Rows */}
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              {isEditing ? (
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">LinkedIn Profile URL</label>
+                    <input
+                      type="text"
+                      value={editLinkedin}
+                      onChange={(e) => setEditLinkedin(e.target.value)}
+                      placeholder="linkedin.com/in/..."
+                      className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">GitHub Profile URL</label>
+                    <input
+                      type="text"
+                      value={editGithub}
+                      onChange={(e) => setEditGithub(e.target.value)}
+                      placeholder="github.com/..."
+                      className="w-full rounded-xl border border-slate-200 bg-white py-1 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Email Address */}
+                  <div className="flex items-start gap-2.5 overflow-hidden">
+                    <Mail className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <div className="overflow-hidden">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Email Address</p>
+                      <p className="text-xs font-semibold text-slate-700 truncate" title={candidate.email}>
+                        {candidate.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="flex items-start gap-2.5">
+                    <Phone className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</p>
+                      <p className="text-xs font-semibold text-slate-700">{candidate.phone || "N/A"}</p>
+                    </div>
+                  </div>
+
+                  {/* Ingestion Date */}
+                  <div className="flex items-start gap-2.5">
+                    <Calendar className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ingestion Date</p>
+                      <p className="text-xs font-semibold text-slate-700">
+                        {new Date(candidate.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Social profiles */}
-            {!isEditing && candidate && (
+            {!isEditing && (
               <div className="space-y-3 pt-4 border-t border-slate-100">
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Social profiles</p>
                 <div className="flex gap-2">
@@ -478,14 +606,12 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
           </div>
 
           {/* SYSTEM ID AUDIT */}
-          {candidate && (
-            <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-normal pt-6 mt-6 border-t border-slate-100">
-              SYS INTEGRATION ID<br />
-              <span className="font-mono text-[9px] text-slate-500 font-medium normal-case tracking-normal">
-                {candidate.id}
-              </span>
-            </div>
-          )}
+          <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-normal pt-6 mt-6 border-t border-slate-100">
+            SYS INTEGRATION ID<br />
+            <span className="font-mono text-[9px] text-slate-500 font-medium normal-case tracking-normal">
+              {candidate.id}
+            </span>
+          </div>
 
         </div>
 
@@ -495,7 +621,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
         <div className="flex-1 h-full flex flex-col min-w-0 relative">
           
           {/* Glassmorphic Tabs Headers bar */}
-          <div className="bg-white border-b border-slate-100 px-6 pt-4 flex items-center justify-between">
+          <div className="bg-white border-b border-slate-100 px-6 pt-4 flex items-center justify-between flex-shrink-0">
             <div className="flex gap-4">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -521,7 +647,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
           <div className="flex-1 overflow-y-auto p-6 min-w-0">
             
             {/* PDF Viewer Tab */}
-            {activeTab === "resume" && candidate && (
+            {activeTab === "resume" && (
               <div className="h-full space-y-4 animate-in fade-in duration-200">
                 {/* CV Action Row */}
                 <div className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-2xl">
@@ -549,7 +675,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             )}
 
             {/* Parsed Details Tab */}
-            {activeTab === "details" && candidate && (
+            {activeTab === "details" && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <CandidatePreferencesWidget candidate={candidate} />
                 
@@ -701,48 +827,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-slate-400 italic">No experience history indexed.</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Academic Background */}
-                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Academic Background
-                    </h4>
-                  </div>
-                  <div className="space-y-3">
-                    {(candidate.education || []).length > 0 ? (
-                      (candidate.education || []).map((edu, edIdx) => (
-                        <div key={edIdx} className="group relative rounded-xl border border-slate-100 bg-slate-50/20 p-3 hover:bg-slate-50/50 transition-colors">
-                          <div className="flex justify-between items-start gap-4">
-                            <div>
-                              <h5 className="text-xs font-bold text-slate-800">{edu.degree || "Degree Unspecified"}</h5>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
-                                {edu.level || "UG/PG"}
-                              </span>
-                              {isEditing && (
-                                <button
-                                  onClick={() => {
-                                    const updatedEdu = (candidate.education || []).filter((_, i) => i !== edIdx);
-                                    handleUpdateField("education", updatedEdu);
-                                  }}
-                                  className="text-red-400 hover:text-red-600 transition-colors cursor-pointer p-0.5 rounded-md hover:bg-red-50"
-                                  title="Delete Education Entry"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">No academic items indexed.</p>
+                      <p className="text-xs text-slate-400 font-semibold italic">No work experience mapped.</p>
                     )}
                   </div>
                 </div>
@@ -751,7 +836,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             )}
 
             {/* Recruiter Notes Tab */}
-            {activeTab === "notes" && candidate && (
+            {activeTab === "notes" && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <NotesSection
                   notes={notesList}
@@ -763,7 +848,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
             )}
 
             {/* Communication Tab */}
-            {activeTab === "communication" && candidate && (
+            {activeTab === "communication" && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between gap-4 border-b border-slate-50 pb-3.5">
                   <div className="flex items-center gap-1.5">
@@ -797,7 +882,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
           {/* COMPARISON MERGE OVERLAY PANEL */}
           {/* ========================================== */}
           {showMergeOverlay && newResumeData && (
-            <div className="absolute inset-0 z-40 bg-slate-900/85 backdrop-blur-md p-6 flex flex-col justify-between animate-in fade-in slide-in-from-bottom duration-300">
+            <div className="absolute inset-0 z-45 bg-slate-900/85 backdrop-blur-md p-6 flex flex-col justify-between animate-in fade-in slide-in-from-bottom duration-300">
               <div className="space-y-6 overflow-y-auto max-h-[82%]">
                 <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -816,7 +901,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
                   <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Existing Profile Skills</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {(candidate?.skills || []).map((skill, idx) => (
+                      {(candidate.skills || []).map((skill, idx) => (
                         <span key={idx} className="bg-slate-900 text-slate-400 border border-slate-800 rounded-lg px-2 py-0.5 text-[10px] font-semibold">
                           {skill}
                         </span>
@@ -899,12 +984,33 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
         </div>
 
       </div>
+
       {/* Send Email Modal */}
-      {isEmailModalOpen && candidate && (
+      {isEmailModalOpen && (
         <SendEmailModal
           isOpen={isEmailModalOpen}
           onClose={() => setIsEmailModalOpen(false)}
           candidate={candidate}
+        />
+      )}
+
+      {/* Pipeline Status Change Details Capture Modals */}
+      {isSelectionModalOpen && (
+        <SelectionModal
+          isOpen={isSelectionModalOpen}
+          candidateName={candidate.name}
+          defaultRole={candidate.job_opening?.title || ""}
+          onConfirm={handleSelectionConfirm}
+          onCancel={() => setIsSelectionModalOpen(false)}
+        />
+      )}
+
+      {isRejectionModalOpen && (
+        <RejectionModal
+          isOpen={isRejectionModalOpen}
+          candidateName={candidate.name}
+          onConfirm={handleRejectionConfirm}
+          onCancel={() => setIsRejectionModalOpen(false)}
         />
       )}
 

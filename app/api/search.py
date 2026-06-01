@@ -110,7 +110,15 @@ async def update_candidate_status(
     payload: CandidateUpdateStatus,
     session: AsyncSession = Depends(get_session),
 ):
-    candidate = await CandidateService(session).update_status(candidate_id, payload.status)
+    candidate = await CandidateService(session).update_status(
+        candidate_id=candidate_id,
+        status=payload.status,
+        selection_salary_per_month=payload.selection_salary_per_month,
+        selection_role=payload.selection_role,
+        selection_duration_months=payload.selection_duration_months,
+        rejection_reason=payload.rejection_reason,
+        rejection_snooze_until=payload.rejection_snooze_until,
+    )
     return APIResponse(success=True, message="Status updated", data=CandidateRead.model_validate(candidate))
 
 

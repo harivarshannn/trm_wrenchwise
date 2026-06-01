@@ -31,6 +31,7 @@ class SearchService:
         skills: Optional[str] = None,
         engagement_mode: Optional[str] = None,
     ):
+        await self._repo.auto_refresh_snoozed_candidates()
         offset = (page - 1) * limit
         return await self._repo.search(
             query=query,

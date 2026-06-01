@@ -39,6 +39,7 @@ class CandidateService:
         education: Optional[list[dict]] = None,
         experience: Optional[list[dict]] = None,
         certifications: Optional[list[str]] = None,
+        job_opening_id: Optional[uuid.UUID] = None,
         created_by: Optional[str] = None,
     ) -> Candidate:
         existing = await self._duplicates.find_exact_duplicate(email, phone, linkedin_url)
@@ -61,6 +62,7 @@ class CandidateService:
             education=education,
             experience=experience,
             certifications=certifications,
+            job_opening_id=job_opening_id,
             status=CandidateStatus.IN_PROGRESS,
         )
         candidate = await self._repo.create(candidate)
@@ -95,16 +97,69 @@ class CandidateService:
         return candidate
 
     async def update_status(
-        self, candidate_id: uuid.UUID, status: CandidateStatus, updated_by: Optional[str] = None
+        self,
+        candidate_id: uuid.UUID,
+        status: CandidateStatus,
+        selection_salary_per_month: Optional[str] = None,
+        selection_role: Optional[str] = None,
+        selection_duration_months: Optional[int] = None,
+        rejection_reason: Optional[str] = None,
+        rejection_snooze_until: Optional[datetime] = None,
+        updated_by: Optional[str] = None,
     ) -> Candidate:
         candidate = await self._repo.get_by_id(candidate_id)
         if not candidate:
             raise NotFoundError("Candidate not found.")
-        candidate = await self._repo.update_status(candidate, status)
+            
+        candidate.status = status
+        log_desc = f"Status updated to {status.value}"
+        
+        if status == CandidateStatus.SELECTED:
+            candidate.selection_salary_per_month = selection_salary_per_month
+            candidate.selection_role = selection_role
+            candidate.selection_duration_months = selection_duration_months
+            candidate.rejection_reason = None
+            candidate.rejection_snooze_until = None
+            
+            details = []
+            if selection_role:
+                details.append(f"Role: {selection_role}")
+            if selection_salary_per_month:
+                details.append(f"Salary: {selection_salary_per_month}/mo")
+            if selection_duration_months:
+                details.append(f"Duration: {selection_duration_months} mos")
+            if details:
+                log_desc += f" ({', '.join(details)})"
+                
+        elif status == CandidateStatus.REJECTED:
+            candidate.rejection_reason = rejection_reason
+            candidate.rejection_snooze_until = rejection_snooze_until
+            candidate.selection_salary_per_month = None
+            candidate.selection_role = None
+            candidate.selection_duration_months = None
+            
+            details = []
+            if rejection_reason:
+                details.append(f"Reason: {rejection_reason}")
+            if rejection_snooze_until:
+                details.append(f"Snoozed until: {rejection_snooze_until.strftime('%b %d, %Y %I:%M %p')}")
+            if details:
+                log_desc += f" ({', '.join(details)})"
+                
+        else:
+            candidate.selection_salary_per_month = None
+            candidate.selection_role = None
+            candidate.selection_duration_months = None
+            candidate.rejection_reason = None
+            candidate.rejection_snooze_until = None
+
+        await self._repo._session.commit()
+        await self._repo._session.refresh(candidate)
+
         await self._activity.log(
             candidate_id=candidate.id,
             action_type="status_updated",
-            description=f"Status updated to {status.value}",
+            description=log_desc,
             created_by=updated_by,
         )
         return candidate
@@ -137,5 +192,11 @@ class CandidateService:
             "education": candidate.education,
             "experience": candidate.experience,
             "certifications": candidate.certifications,
+            "job_opening_id": str(candidate.job_opening_id) if candidate.job_opening_id else None,
+            "selection_salary_per_month": candidate.selection_salary_per_month,
+            "selection_role": candidate.selection_role,
+            "selection_duration_months": candidate.selection_duration_months,
+            "rejection_reason": candidate.rejection_reason,
+            "rejection_snooze_until": candidate.rejection_snooze_until.isoformat() if candidate.rejection_snooze_until else None,
             "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
         }

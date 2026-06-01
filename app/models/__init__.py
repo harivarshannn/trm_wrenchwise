@@ -6,6 +6,7 @@ from app.models.activity import CandidateActivityLog
 from app.models.candidate_email import CandidateEmail
 from app.models.email_template import EmailTemplate
 from app.models.user import User
+from app.models.job_opening import JobOpening
 
 __all__ = [
     "Candidate",
@@ -15,4 +16,5 @@ __all__ = [
     "CandidateEmail",
     "EmailTemplate",
     "User",
+    "JobOpening",
 ]

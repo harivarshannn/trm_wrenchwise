@@ -31,11 +31,33 @@ export const useUpdateCandidateStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: CandidateStatus }) => {
+    mutationFn: async ({
+      id,
+      status,
+      selection_salary_per_month,
+      selection_role,
+      selection_duration_months,
+      rejection_reason,
+      rejection_snooze_until,
+    }: {
+      id: string;
+      status: CandidateStatus;
+      selection_salary_per_month?: string;
+      selection_role?: string;
+      selection_duration_months?: number;
+      rejection_reason?: string;
+      rejection_snooze_until?: string | null;
+    }) => {
       const oldCandidate = await candidateService.getCandidateById(id);
       const oldStatus = oldCandidate ? oldCandidate.status : "Unknown";
       
-      const updated = await candidateService.updateCandidateStatus(id, status);
+      const updated = await candidateService.updateCandidateStatus(id, status, {
+        selection_salary_per_month,
+        selection_role,
+        selection_duration_months,
+        rejection_reason,
+        rejection_snooze_until,
+      });
       
       // Auto-inject timeline event
       const statusLabels: Record<string, string> = {
@@ -44,11 +66,18 @@ export const useUpdateCandidateStatus = () => {
         rejected: "Rejected"
       };
       
+      let customDetails = "";
+      if (status === "selected") {
+        customDetails = ` (Role: ${selection_role || "N/A"}, Salary: ${selection_salary_per_month || "N/A"}, Duration: ${selection_duration_months || 0}mo)`;
+      } else if (status === "rejected") {
+        customDetails = ` (Reason: ${rejection_reason || "N/A"}${rejection_snooze_until ? `, Snoozed until: ${new Date(rejection_snooze_until).toLocaleDateString()}` : ""})`;
+      }
+
       await notesService.addEvent(
         id,
         "status_change",
         "Pipeline Stage Transition",
-        `Candidate status shifted: ${statusLabels[oldStatus] || oldStatus} ➔ ${statusLabels[status]}`
+        `Candidate status shifted: ${statusLabels[oldStatus] || oldStatus} ➔ ${statusLabels[status]}${customDetails}`
       );
       
       return updated;

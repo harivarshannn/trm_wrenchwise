@@ -8,6 +8,7 @@ import uuid
 
 from sqlalchemy import Select, func, or_, select, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.models.candidate import Candidate, CandidateStatus
 
@@ -20,7 +21,9 @@ class CandidateRepository:
 
     async def get_by_id(self, candidate_id: uuid.UUID) -> Optional[Candidate]:
         result = await self._session.execute(
-            select(Candidate).where(Candidate.id == candidate_id)
+            select(Candidate)
+            .options(joinedload(Candidate.job_opening))
+            .where(Candidate.id == candidate_id)
         )
         return result.scalar_one_or_none()
 
@@ -65,7 +68,7 @@ class CandidateRepository:
         skills: Optional[str] = None,
         engagement_mode: Optional[str] = None,
     ) -> tuple[Sequence[Candidate], int]:
-        statement = select(Candidate)
+        statement = select(Candidate).options(joinedload(Candidate.job_opening))
         statement = self._apply_filters(
             statement, query, status, has_linkedin, has_github, uploaded_from, uploaded_to,
             location=location, skills=skills, engagement_mode=engagement_mode
@@ -141,3 +144,38 @@ class CandidateRepository:
     async def delete(self, candidate: Candidate) -> None:
         await self._session.delete(candidate)
         await self._session.commit()
+
+    async def auto_refresh_snoozed_candidates(self) -> None:
+        """Automatically activate rejected candidates whose availability snooze time has expired."""
+        from datetime import datetime, timezone
+        from app.models.activity import CandidateActivityLog
+        
+        now = datetime.now(timezone.utc)
+        
+        # Select all rejected candidates where snooze has expired
+        stmt = (
+            select(Candidate)
+            .where(Candidate.status == CandidateStatus.REJECTED)
+            .where(Candidate.rejection_snooze_until.isnot(None))
+            .where(Candidate.rejection_snooze_until <= now)
+        )
+        result = await self._session.execute(stmt)
+        expired_candidates = result.scalars().all()
+        
+        for cand in expired_candidates:
+            old_reason = cand.rejection_reason
+            cand.status = CandidateStatus.IN_PROGRESS
+            cand.rejection_snooze_until = None
+            cand.rejection_reason = None
+            
+            # Log activity log
+            activity = CandidateActivityLog(
+                candidate_id=cand.id,
+                action_type="status_updated",
+                description=f"Rejection snooze expired. Candidate returned to active board for review. (Prev Reason: {old_reason})",
+                created_by="System"
+            )
+            self._session.add(activity)
+            
+        if expired_candidates:
+            await self._session.commit()

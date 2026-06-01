@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Index, String, Text, func, JSON
+from sqlalchemy import DateTime, Enum, Index, String, Text, func, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,6 +46,20 @@ class Candidate(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # Job opening association
+    job_opening_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("job_openings.id"), nullable=True)
+
+    # Selection Details
+    selection_salary_per_month: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    selection_role: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    selection_duration_months: Mapped[int | None] = mapped_column(nullable=True)
+
+    # Rejection Details
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rejection_snooze_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    job_opening = relationship("JobOpening", back_populates="candidates")
     notes = relationship("CandidateNote", back_populates="candidate", cascade="all, delete-orphan")
     activity_logs = relationship("CandidateActivityLog", back_populates="candidate", cascade="all, delete-orphan")
     emails = relationship("CandidateEmail", back_populates="candidate", cascade="all, delete-orphan")
@@ -55,3 +69,4 @@ Index("ix_candidates_email", Candidate.email)
 Index("ix_candidates_phone", Candidate.phone)
 Index("ix_candidates_linkedin", Candidate.linkedin_url)
 Index("ix_candidates_github", Candidate.github_url)
+Index("ix_candidates_job_opening", Candidate.job_opening_id)

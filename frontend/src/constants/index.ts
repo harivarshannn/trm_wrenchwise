@@ -3,6 +3,7 @@ import { Candidate } from "../types";
 export const NAVIGATION_ITEMS = [
   { name: "Dashboard", href: "/", icon: "LayoutDashboard", isPage: true },
   { name: "Candidates", href: "/candidates", icon: "Users", isPage: true },
+  { name: "Job Openings", href: "/jobs", icon: "Briefcase", isPage: true },
   { name: "Upload Resume", href: "/upload", icon: "UploadCloud", isPage: true },
   { name: "Reminders", href: "/reminders", icon: "CalendarClock", isPage: true },
   { name: "Reports", href: "/reports", icon: "BarChart3", isPage: false },

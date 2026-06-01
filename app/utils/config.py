@@ -86,6 +86,19 @@ def get_settings() -> Settings:
     if not database_url:
         raise ValueError("DATABASE_URL is required for database access.")
 
+    # Convert internal Render DB URL to external if running locally
+    if database_url and not os.getenv("RENDER"):
+        import re
+        if "@dpg-" in database_url and ".render.com" not in database_url:
+            database_url = re.sub(
+                r'@(dpg-[a-z0-9]+-a)(?=[:/])',
+                r'@\1.oregon-postgres.render.com',
+                database_url
+            )
+            if "ssl=require" not in database_url:
+                separator = "&" if "?" in database_url else "?"
+                database_url = f"{database_url}{separator}ssl=require"
+
     google_api_key = os.getenv("GOOGLE_API_KEY", "").strip()
 
     jwt_secret = os.getenv("JWT_SECRET", "").strip()
