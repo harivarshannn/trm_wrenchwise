@@ -53,7 +53,7 @@ class Settings:
     """Application settings derived from environment variables."""
 
     database_url: str
-    google_api_key: str
+    google_api_key: str = ""
     max_file_size_mb: int = 10
     ocr_min_text_length: int = 80
     ocr_batch_size: int = 8
@@ -87,8 +87,6 @@ def get_settings() -> Settings:
         raise ValueError("DATABASE_URL is required for database access.")
 
     google_api_key = os.getenv("GOOGLE_API_KEY", "").strip()
-    if not google_api_key:
-        raise ValueError("GOOGLE_API_KEY is required for OCR requests.")
 
     jwt_secret = os.getenv("JWT_SECRET", "").strip()
     if not jwt_secret:

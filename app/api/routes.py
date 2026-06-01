@@ -57,22 +57,18 @@ async def upload_resume(request: Request, file: UploadFile = File(...)) -> Uploa
 
     if is_pdf(file.filename, file.content_type):
         extractor = request.app.state.pdf_extractor
-        direct_text = await asyncio.to_thread(extractor.extract_text, content)
-        if len(direct_text.strip()) < settings.ocr_min_text_length:
-            ocr_service = request.app.state.ocr_service
-            ocr_result = await ocr_service.ocr_pdf_async(content, settings.ocr_dpi)
-            raw_text = ocr_result.text
-            ocr_confidence = ocr_result.confidence
-        else:
-            raw_text = direct_text
+        raw_text = await asyncio.to_thread(extractor.extract_text, content)
+        ocr_confidence = None
+        if not raw_text or len(raw_text.strip()) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Unable to extract text. This appears to be a scanned PDF (image only) or has no selectable text. Please upload a digital text PDF, as OCR services are currently disabled."
+            )
     else:
-        ocr_service = request.app.state.ocr_service
-        ocr_result = await ocr_service.ocr_images_async([content])
-        raw_text = ocr_result.text
-        ocr_confidence = ocr_result.confidence
-
-    if not raw_text:
-        raise HTTPException(status_code=422, detail="Unable to extract text from resume.")
+        raise HTTPException(
+            status_code=400,
+            detail="Image upload is disabled because Google Cloud Vision OCR is currently inactive. Please upload a digital text PDF."
+        )
 
     parser = request.app.state.parser
     parsed_resume = await asyncio.to_thread(parser.parse, raw_text)
