@@ -58,7 +58,7 @@ export default function DashboardPage() {
       value: rejected,
       icon: XCircle,
       color: "red",
-      change: "Polite letters sent",
+      change: "Rejection notices issued",
       bgClass: "bg-red-50 text-red-600 border-red-100",
       href: "/candidates?status=rejected",
     },

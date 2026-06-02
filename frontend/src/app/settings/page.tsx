@@ -40,7 +40,7 @@ export default function SettingsPage() {
 
   // Config settings mock states for high-fidelity interactive feeling
   const [ocrKey, setOcrKey] = useState("AIzaSyB_GoogleVisionAPI_EnterpriseKey_V2");
-  const [geminiModel, setGeminiModel] = useState("gemini-1.5-pro");
+  const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash");
   const [rateLimit, setRateLimit] = useState(60);
   const [backupSchedule, setBackupSchedule] = useState("daily");
 
@@ -406,9 +406,10 @@ export default function SettingsPage() {
                     onChange={(e) => setGeminiModel(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs text-slate-800 focus:border-slate-800 focus:outline-hidden transition-all bg-slate-50/40"
                   >
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Recommended)</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Low-Latency)</option>
-                    <option value="gemini-2.0-experimental">Gemini 2.0 Experimental</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro (High-Fidelity)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                   </select>
                   <p className="text-[10px] text-slate-400 leading-normal">
                     Model selection used to structure unstructured text coordinates back into normalized schemas.
@@ -442,7 +443,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => {
                     setOcrKey("AIzaSyB_GoogleVisionAPI_EnterpriseKey_V2");
-                    setGeminiModel("gemini-1.5-pro");
+                    setGeminiModel("gemini-2.5-flash");
                     setRateLimit(60);
                   }}
                   className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
