@@ -117,27 +117,3 @@ async def approve_user(user_id: uuid.UUID, payload: UserApprove, session: AsyncS
 
     status_str = "approved" if payload.is_active else "revoked"
     return APIResponse(success=True, message=f"User access successfully {status_str}.", data=UserRead.model_validate(user))
-
-
-@router.post("/reset-superadmin", response_model=APIResponse[dict])
-async def reset_superadmin(session: AsyncSession = Depends(get_session)):
-    stmt = select(User).where(User.username == "wrenchwise")
-    result = await session.execute(stmt)
-    user = result.scalar_one_or_none()
-    
-    if not user:
-        user = User(
-            id=uuid.uuid4(),
-            username="wrenchwise",
-            password_hash=hash_password("wrenchwise@2026"),
-            role="superior_admin",
-            is_active=True
-        )
-        session.add(user)
-    else:
-        user.password_hash = hash_password("wrenchwise@2026")
-        user.role = "superior_admin"
-        user.is_active = True
-        
-    await session.commit()
-    return APIResponse(success=True, message="Super admin password successfully reset to wrenchwise@2026", data={})
