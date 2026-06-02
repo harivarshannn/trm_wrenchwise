@@ -18,7 +18,6 @@ export interface JobOpening {
   title: string;
   description?: string | null;
   status: string;
-  vacancies: number;
   created_at: string;
   total_candidates?: number;
   accepted_candidates?: number;

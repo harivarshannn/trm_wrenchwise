@@ -15,6 +15,7 @@ class JobOpeningBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     status: str = Field("active", max_length=50)  # "active" or "closed"
+    vacancies: int = Field(1, ge=1)
 
 
 class JobOpeningCreate(JobOpeningBase):
@@ -28,6 +29,7 @@ class JobOpeningUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     status: Optional[str] = Field(None, max_length=50)
+    vacancies: Optional[int] = Field(None, ge=1)
 
 
 class JobOpeningRead(JobOpeningBase):

@@ -14,7 +14,7 @@ export const useCreateJob = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (job: { title: string; description?: string; vacancies?: number }) => jobService.createJob(job),
+    mutationFn: (job: { title: string; description?: string }) => jobService.createJob(job),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },

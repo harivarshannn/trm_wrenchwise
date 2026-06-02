@@ -24,7 +24,7 @@ export const jobService = {
     return [];
   },
 
-  createJob: async (job: { title: string; description?: string; vacancies?: number }): Promise<JobOpening> => {
+  createJob: async (job: { title: string; description?: string }): Promise<JobOpening> => {
     const response = await apiClient.post<ApiResponse<JobOpening>>("/api/jobs", job);
     if (response.data.success) {
       return response.data.data;

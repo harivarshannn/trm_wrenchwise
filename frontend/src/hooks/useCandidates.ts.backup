@@ -87,7 +87,6 @@ export const useUpdateCandidateStatus = () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["candidate", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["timeline", variables.id] });
-      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
 };
@@ -119,7 +118,6 @@ export const useUpdateCandidate = () => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["candidate", variables.id] });
-      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
 };

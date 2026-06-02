@@ -55,6 +55,7 @@ async def list_jobs(session: AsyncSession = Depends(get_session)):
                     title=job_obj.title,
                     description=job_obj.description,
                     status=job_obj.status,
+                    vacancies=job_obj.vacancies,
                     created_at=job_obj.created_at,
                     updated_at=job_obj.updated_at,
                     total_candidates=total,
@@ -76,7 +77,8 @@ async def create_job(payload: JobOpeningCreate, session: AsyncSession = Depends(
         new_job = JobOpening(
             title=payload.title,
             description=payload.description,
-            status=payload.status
+            status=payload.status,
+            vacancies=payload.vacancies
         )
         session.add(new_job)
         await session.commit()
@@ -87,6 +89,7 @@ async def create_job(payload: JobOpeningCreate, session: AsyncSession = Depends(
             title=new_job.title,
             description=new_job.description,
             status=new_job.status,
+            vacancies=new_job.vacancies,
             created_at=new_job.created_at,
             updated_at=new_job.updated_at,
             total_candidates=0,
@@ -139,6 +142,7 @@ async def update_job(
             title=job_obj.title,
             description=job_obj.description,
             status=job_obj.status,
+            vacancies=job_obj.vacancies,
             created_at=job_obj.created_at,
             updated_at=job_obj.updated_at,
             total_candidates=total_res.scalar_one(),
