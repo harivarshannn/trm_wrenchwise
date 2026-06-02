@@ -36,7 +36,7 @@
 }
 
 html {
-  font-size: 20px; /* Proportionally scales all rem values for superior global visibility */
+  font-size: 16px; /* Standard rem baseline — Tailwind's rem utilities rely on this */
 }
 
 body {
@@ -159,19 +159,19 @@ body {
   box-shadow: 0 4px 12px rgba(0, 191, 165, 0.2) !important;
 }
 
-/* Hover state overrides */
-.hover\:bg-blue-700:hover, 
-.bg-blue-600:hover {
+/* Hover state overrides — only applies to interactive button elements */
+button.bg-blue-600:hover,
+a.bg-blue-600:hover,
+button.hover\:bg-blue-700:hover,
+a.hover\:bg-blue-700:hover {
   background: linear-gradient(135deg, #008f7a 0%, #1d4ed8 100%) !important;
   box-shadow: 0 6px 16px rgba(0, 191, 165, 0.3) !important;
-  transform: translateY(-1px);
   transition: all 0.2s ease;
 }
 
-/* Light / Active Backgrounds (bg-blue-50) */
+/* Light / Active Backgrounds (bg-blue-50) — removed border-left to prevent icon container shift */
 .bg-blue-50 {
   background: linear-gradient(135deg, rgba(0, 191, 165, 0.08) 0%, rgba(30, 64, 175, 0.08) 100%) !important;
-  border-left: 3px solid #00bfa5 !important;
 }
 
 /* Text coloring overrides for active items */

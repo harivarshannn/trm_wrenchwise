@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Bell, Menu, LogOut, User, Settings, HelpCircle } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useAuthStore } from "../../hooks/useAuthStore";
 import { useReminders } from "../../hooks/useNotes";
@@ -13,7 +13,6 @@ interface NavbarProps {
 
 export default function Navbar({ setIsMobileOpen }: NavbarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const { user, logout } = useAuthStore();
@@ -78,9 +77,9 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
           <Image
             src="/logo.png"
             alt="Wrench Wise logo"
-            width={56}
-            height={56}
-            className="h-14 w-14 object-contain"
+            width={38}
+            height={38}
+            className="h-9.5 w-9.5 object-contain"
             priority
           />
           <h1 className="text-xl font-semibold text-slate-800 tracking-tight">
@@ -103,7 +102,7 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
           >
             <Bell className="h-5 w-5" />
             {notificationItems.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white animate-pulse shadow-sm">
+              <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white animate-pulse shadow-sm">
                 {notificationItems.length}
               </span>
             )}
@@ -116,12 +115,7 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
               <div className="absolute right-0 mt-2.5 w-80 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl shadow-slate-200/50 ring-1 ring-black/5 z-20">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-slate-50">
                   <h3 className="text-xs font-semibold text-slate-800">Notifications</h3>
-                  <button
-                    onClick={() => setShowNotifications(false)}
-                    className="text-[10px] font-semibold text-blue-600 hover:underline cursor-pointer"
-                  >
-                    Mark all read
-                  </button>
+                  <button className="text-[10px] font-semibold text-blue-600 hover:underline">Mark all read</button>
                 </div>
                 <div className="divide-y divide-slate-50 overflow-hidden max-h-64 overflow-y-auto">
                   {displayNotifications.map((notif) => (
@@ -168,26 +162,17 @@ export default function Navbar({ setIsMobileOpen }: NavbarProps) {
                   </p>
                 </div>
                 <div className="mt-1">
-                  <button
-                    onClick={() => { router.push("/settings"); setShowProfileMenu(false); }}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
+                  <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 transition-colors">
                     <User className="h-3.5 w-3.5" />
                     My Profile
                   </button>
-                  <button
-                    onClick={() => { router.push("/settings"); setShowProfileMenu(false); }}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
+                  <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 transition-colors">
                     <Settings className="h-3.5 w-3.5" />
                     Settings
                   </button>
-                  <button
-                    onClick={() => { window.open("https://github.com", "_blank"); setShowProfileMenu(false); }}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
+                  <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50 transition-colors">
                     <HelpCircle className="h-3.5 w-3.5" />
-                    Help &amp; Docs
+                    Help & Docs
                   </button>
                   <div className="border-t border-slate-50 my-1" />
                   <button

@@ -38,8 +38,8 @@ export default function SettingsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Config settings mock states for high-fidelity interactive feeling
-  const [ocrKey, setOcrKey] = useState("AIzaSyB_GoogleVisionAPI_EnterpriseKey_V2");
+  // Config settings — display-only, these reflect server-side environment values
+  const [ocrKey, setOcrKey] = useState("");
   const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash");
   const [rateLimit, setRateLimit] = useState(60);
   const [backupSchedule, setBackupSchedule] = useState("daily");
@@ -389,6 +389,7 @@ export default function SettingsPage() {
                     type="password"
                     value={ocrKey}
                     onChange={(e) => setOcrKey(e.target.value)}
+                    placeholder="Enter your GOOGLE_API_KEY value"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs text-slate-800 focus:border-slate-800 focus:outline-hidden transition-all bg-slate-50/40"
                   />
                   <p className="text-[10px] text-slate-400 leading-normal">
@@ -439,26 +440,33 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="border-t border-slate-50 pt-5 flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setOcrKey("AIzaSyB_GoogleVisionAPI_EnterpriseKey_V2");
-                    setGeminiModel("gemini-2.5-flash");
-                    setRateLimit(60);
-                  }}
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
-                >
-                  Reset Defaults
-                </button>
-                <button
-                  onClick={() => {
-                    setSuccessMessage("Global parser configurations saved successfully.");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="rounded-xl bg-slate-900 text-white px-4 py-2 text-xs font-bold shadow-md hover:bg-slate-800 cursor-pointer"
-                >
-                  Save Configuration
-                </button>
+              <div className="border-t border-slate-50 pt-5">
+                <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-3 mb-4">
+                  <p className="text-[10px] font-semibold text-amber-700 leading-relaxed">
+                    <strong>ℹ️ Environment Configuration:</strong> OCR keys, model selections, and rate limits are controlled via server environment variables (GOOGLE_API_KEY, GROQ_MODEL, RATE_LIMIT_REQUESTS) on your Render deployment. Update them in your Render dashboard and redeploy to apply changes.
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      setOcrKey("");
+                      setGeminiModel("gemini-2.5-flash");
+                      setRateLimit(60);
+                    }}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                  >
+                    Reset Form
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSuccessMessage("Configuration reference noted. Apply these values via environment variables on your Render deployment to persist changes.");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="rounded-xl bg-slate-900 text-white px-4 py-2 text-xs font-bold shadow-md hover:bg-slate-800 cursor-pointer"
+                  >
+                    Acknowledge & Close
+                  </button>
+                </div>
               </div>
             </div>
           </div>

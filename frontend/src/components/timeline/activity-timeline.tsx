@@ -46,7 +46,7 @@ export default function ActivityTimeline({ events, isLoading }: ActivityTimeline
       {/* Central Connector vertical Line */}
       {events && events.length > 1 && (
         <span
-          className="absolute left-4.5 top-2 bottom-2 w-0.5 bg-slate-100"
+          className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-slate-100"
           aria-hidden="true"
         />
       )}

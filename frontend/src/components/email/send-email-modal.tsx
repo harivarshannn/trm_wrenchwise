@@ -172,14 +172,14 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
         {/* Header bar */}
         <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-blue-600">
-            <Sparkles className="h-4.5 w-4.5" />
+            <Sparkles className="h-5 w-5" />
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
               Send Recruiter Email
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-150 hover:text-slate-700 transition-all cursor-pointer"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>

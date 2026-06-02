@@ -56,7 +56,7 @@ export default function EmailCard({ email }: EmailCardProps) {
       >
         <div className="flex items-start gap-3 min-w-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 flex-shrink-0 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-200">
-            <Mail className="h-4.5 w-4.5" />
+            <Mail className="h-5 w-5" />
           </div>
           <div className="min-w-0">
             <h4 className="text-xs font-bold text-slate-800 truncate pr-4" title={email.subject}>

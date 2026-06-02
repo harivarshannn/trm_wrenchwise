@@ -31,7 +31,7 @@ export default function DashboardPage() {
       value: total,
       icon: Users,
       color: "blue",
-      change: "+12% vs last month",
+      change: total > 0 ? `${total} candidate${total === 1 ? "" : "s"} in pipeline` : "No candidates yet",
       bgClass: "bg-blue-50 text-blue-600 border-blue-100",
       href: "/candidates",
     },
@@ -83,7 +83,7 @@ export default function DashboardPage() {
           href="/upload"
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
         >
-          <UserPlus className="h-4.5 w-4.5" />
+          <UserPlus className="h-5 w-5" />
           <span>Upload Resume</span>
         </Link>
       </div>

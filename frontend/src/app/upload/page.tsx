@@ -371,7 +371,7 @@ export default function UploadPage() {
             <Dropzone onUploadSuccess={handleUploadSuccess} onBulkUploadStart={handleBulkUploadStart} />
             
             {/* Ephemeral Environment Notice */}
-            <div className="max-w-md mx-auto mt-6 rounded-2xl border border-amber-150 bg-amber-50/40 p-4 text-xs text-amber-800 font-medium leading-relaxed flex items-start gap-3 shadow-xs">
+            <div className="max-w-md mx-auto mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-4 text-xs text-amber-800 font-medium leading-relaxed flex items-start gap-3 shadow-xs">
               <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
                 <strong className="block text-amber-900 font-bold mb-0.5">Cloud Environment Storage Tip</strong>

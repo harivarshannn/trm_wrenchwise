@@ -563,7 +563,7 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
               className="flex items-center gap-3 rounded-2xl border border-slate-100 p-3 bg-white hover:border-blue-300 hover:bg-blue-50/10 hover:shadow-sm transition-all group"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:scale-105 transition-transform">
-                <Linkedin className="h-4.5 w-4.5" />
+                <Linkedin className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">LinkedIn Profile</p>
@@ -575,7 +575,7 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
           ) : (
             <div className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 p-3 bg-slate-50/20 text-slate-400">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100">
-                <Linkedin className="h-4.5 w-4.5" />
+                <Linkedin className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">LinkedIn Profile</p>
@@ -593,7 +593,7 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
               className="flex items-center gap-3 rounded-2xl border border-slate-100 p-3 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm transition-all group"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-800 group-hover:scale-105 transition-transform">
-                <Github className="h-4.5 w-4.5" />
+                <Github className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">GitHub Profile</p>
@@ -605,7 +605,7 @@ export default function ParsedCard({ parsedData, onDone, onSave }: ParsedCardPro
           ) : (
             <div className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 p-3 bg-slate-50/20 text-slate-400">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100">
-                <Github className="h-4.5 w-4.5" />
+                <Github className="h-5 w-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">GitHub Profile</p>

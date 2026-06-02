@@ -576,11 +576,11 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
                       className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-600 hover:bg-blue-50/30 hover:border-blue-300 transition-all shadow-sm"
                       title="LinkedIn Profile"
                     >
-                      <Linkedin className="h-4.5 w-4.5" />
+                      <Linkedin className="h-5 w-5" />
                     </a>
                   ) : (
                     <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-dashed border-slate-200 text-slate-300" title="No LinkedIn found">
-                      <Linkedin className="h-4.5 w-4.5" />
+                      <Linkedin className="h-5 w-5" />
                     </div>
                   )}
 
@@ -592,11 +592,11 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
                       className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
                       title="GitHub Profile"
                     >
-                      <Github className="h-4.5 w-4.5" />
+                      <Github className="h-5 w-5" />
                     </a>
                   ) : (
                     <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-dashed border-slate-200 text-slate-300" title="No GitHub found">
-                      <Github className="h-4.5 w-4.5" />
+                      <Github className="h-5 w-5" />
                     </div>
                   )}
 
@@ -623,7 +623,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
           
           {/* Glassmorphic Tabs Headers bar */}
           <div className="bg-white border-b border-slate-100 px-6 pt-4 flex items-center justify-between flex-shrink-0">
-            <div className="flex gap-4">
+            <div className="flex gap-4 overflow-x-auto">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -883,7 +883,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
           {/* COMPARISON MERGE OVERLAY PANEL */}
           {/* ========================================== */}
           {showMergeOverlay && newResumeData && (
-            <div className="absolute inset-0 z-45 bg-slate-900/85 backdrop-blur-md p-6 flex flex-col justify-between animate-in fade-in slide-in-from-bottom duration-300">
+            <div className="absolute inset-0 z-[45] bg-slate-900/85 backdrop-blur-md p-6 flex flex-col justify-between animate-in fade-in slide-in-from-bottom duration-300">
               <div className="space-y-6 overflow-y-auto max-h-[82%]">
                 <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">

@@ -7,7 +7,7 @@ export const NAVIGATION_ITEMS = [
   { name: "Upload Resume", href: "/upload", icon: "UploadCloud", isPage: true },
   { name: "Reminders", href: "/reminders", icon: "CalendarClock", isPage: true },
   { name: "Reports", href: "/reports", icon: "BarChart3", isPage: false },
-  { name: "Settings", href: "/settings", icon: "Settings", isPage: false },
+  { name: "Settings", href: "/settings", icon: "Settings", isPage: true },
 ];
 
 export const MOCK_CANDIDATES: Candidate[] = [

@@ -11,6 +11,7 @@ interface ResumeViewerProps {
 export default function ResumeViewer({ resumeUrl, candidateName }: ResumeViewerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [showBanner, setShowBanner] = useState(true);
 
   // If no custom resumeUrl is supplied, serve sample PDF
   const defaultIframeUrl = "https://pdfobject.com/pdf/sample.pdf";
@@ -133,21 +134,30 @@ export default function ResumeViewer({ resumeUrl, candidateName }: ResumeViewerP
           />
         )}
         
-        {/* Environment Storage Alert & Sandbox Warning Banner */}
-        <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md border border-slate-150 rounded-2xl p-3 flex flex-col gap-1.5 shadow-md pointer-events-none max-w-lg">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-            <span className="text-[10px] text-slate-600 font-semibold leading-relaxed">
-              <strong className="text-amber-700">Cloud Storage Notice:</strong> This portal is on an ephemeral cloud environment. Document files in temporary storage reset on builds. If blank, click <strong>&quot;Update Resume&quot;</strong> above to re-upload and restore this document.
-            </span>
+        {/* Environment Storage Alert & Sandbox Warning Banner — dismissible */}
+        {showBanner && (
+          <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-3 flex flex-col gap-1.5 shadow-md max-w-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <span className="text-[10px] text-slate-600 font-semibold leading-relaxed flex-1">
+                <strong className="text-amber-700">Cloud Storage Notice:</strong> This portal is on an ephemeral cloud environment. Document files in temporary storage reset on builds. If blank, click <strong>&quot;Update Resume&quot;</strong> above to re-upload and restore this document.
+              </span>
+              <button
+                onClick={() => setShowBanner(false)}
+                className="ml-1 flex-shrink-0 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                title="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex items-start gap-2 pt-1 border-t border-slate-100">
+              <AlertCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+              <span className="text-[9px] text-slate-400 font-medium leading-relaxed">
+                If document fails to load, click <strong>&quot;Open Original&quot;</strong> or check browser sandbox permissions.
+              </span>
+            </div>
           </div>
-          <div className="flex items-start gap-2 pt-1 border-t border-slate-100">
-            <AlertCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-            <span className="text-[9px] text-slate-400 font-medium leading-relaxed">
-              If document fails to load, click <strong>&quot;Open Original&quot;</strong> or check browser sandbox permissions.
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
     </div>
