@@ -27,7 +27,7 @@ const getStoredNotes = (): Note[] => {
     {
       id: "note_1",
       candidateId: "c0a80101-0000-0000-0000-000000000001", // Alex Rivera
-      recruiterName: "Jane Doe (HR Lead)",
+      recruiterName: "wrenchwise (HR Lead)",
       content: "Alex demonstrated top-tier TypeScript knowledge during the live technical screening. Very communicative and structured.",
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
     },
@@ -41,7 +41,7 @@ const getStoredNotes = (): Note[] => {
     {
       id: "note_3",
       candidateId: "c0a80101-0000-0000-0000-000000000002", // Sarah Chen
-      recruiterName: "Jane Doe (HR Lead)",
+      recruiterName: "wrenchwise (HR Lead)",
       content: "Sarah has highly specialized knowledge in FastAPI and ML. However, salary requirements need further negotiations.",
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
     }
@@ -62,7 +62,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       type: "upload",
       title: "Resume Ingested",
       description: "Resume uploaded successfully.",
-      recruiterName: "Jane Doe",
+      recruiterName: "wrenchwise",
       created_at: "2026-05-20T10:30:00Z",
     },
     {
@@ -71,7 +71,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       type: "note_added",
       title: "Screening Note Added",
       description: "Note added by recruiter.",
-      recruiterName: "Jane Doe",
+      recruiterName: "wrenchwise",
       created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     },
     {
@@ -89,7 +89,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       type: "upload",
       title: "Resume Ingested",
       description: "Resume uploaded successfully.",
-      recruiterName: "Jane Doe",
+      recruiterName: "wrenchwise",
       created_at: "2026-05-22T14:45:00Z",
     },
     {
@@ -98,7 +98,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       type: "upload",
       title: "Resume Ingested",
       description: "Resume uploaded successfully.",
-      recruiterName: "Jane Doe",
+      recruiterName: "wrenchwise",
       created_at: "2026-05-24T09:15:00Z",
     },
     {
@@ -107,7 +107,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       type: "status_change",
       title: "Recruitment Status Updated",
       description: "Candidate status changed: In Progress to Rejected.",
-      recruiterName: "Jane Doe",
+      recruiterName: "wrenchwise",
       created_at: "2026-05-24T11:00:00Z",
     },
     {
@@ -116,7 +116,7 @@ const getStoredEvents = (): ActivityEvent[] => {
       type: "upload",
       title: "Resume Ingested",
       description: "Resume uploaded successfully.",
-      recruiterName: "Jane Doe",
+      recruiterName: "wrenchwise",
       created_at: "2026-05-25T16:20:00Z",
     }
   ];

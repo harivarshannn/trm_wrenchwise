@@ -46,7 +46,7 @@ export default function UploadPage() {
         "upload",
         "Resume Ingested",
         "Resume uploaded and profile parsed successfully.",
-        "Jane Doe (HR Lead)"
+        "wrenchwise (HR Lead)"
       );
     } catch (e) {
       console.error("Failed to seed initial timeline event:", e);
@@ -181,7 +181,7 @@ export default function UploadPage() {
               "upload",
               "Resume Ingested",
               "Resume uploaded and profile parsed successfully during bulk intake.",
-              "Jane Doe (HR Lead)"
+              "wrenchwise (HR Lead)"
             );
           } catch (e) {
             console.error("Failed to seed timeline event:", e);

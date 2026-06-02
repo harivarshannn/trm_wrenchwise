@@ -50,7 +50,7 @@ async def send_email(
             custom_subject=payload.custom_subject,
             custom_body=payload.custom_body,
             variables=payload.variables,
-            sent_by="Jane Doe (HR Lead)",  # Recruiter default session
+            sent_by="wrenchwise (HR Lead)",  # Recruiter default session
             followup_date=payload.followup_date,
         )
         return APIResponse(

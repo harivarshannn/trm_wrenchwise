@@ -56,7 +56,7 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
 
     const replacements: Record<string, string> = {
       candidate_name: candidate.name || "Candidate",
-      recruiter_name: "Jane Doe (HR Lead)",
+      recruiter_name: "wrenchwise (HR Lead)",
       company_name: "TRMS Recruitment",
       role_name: "Technical Trainer",
       interview_date: formattedDate
@@ -118,7 +118,7 @@ export default function SendEmailModal({ isOpen, onClose, candidate }: SendEmail
       // Package variables for backend parsing
       const variables: Record<string, string | undefined> = {
         candidate_name: candidate.name,
-        recruiter_name: "Jane Doe (HR Lead)",
+        recruiter_name: "wrenchwise (HR Lead)",
         company_name: "TRMS Recruitment",
         role_name: "Technical Trainer"
       };

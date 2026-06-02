@@ -139,7 +139,7 @@ class EmailService:
         custom_subject: Optional[str] = None,
         custom_body: Optional[str] = None,
         variables: Optional[Dict[str, Any]] = None,
-        sent_by: Optional[str] = "Jane Doe (HR Lead)",
+        sent_by: Optional[str] = "wrenchwise (HR Lead)",
         followup_date: Optional[datetime] = None,
     ) -> CandidateEmail:
         """Render, validate, log, and enqueue candidate email delivery."""

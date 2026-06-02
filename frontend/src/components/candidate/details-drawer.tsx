@@ -132,7 +132,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
     return addNoteMutation.mutateAsync({
       candidateId: candidateId,
       content,
-      recruiterName: "Jane Doe (HR Lead)",
+      recruiterName: "wrenchwise (HR Lead)",
       followupDate,
     });
   };
@@ -246,7 +246,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
         `A newer resume version was uploaded. Brands new skills merged: ${
           selectedNewSkills.join(", ") || "none"
         }.`,
-        "Jane Doe (HR Lead)"
+        "wrenchwise (HR Lead)"
       );
     } catch (e) {
       console.error("Timeline log failed:", e);

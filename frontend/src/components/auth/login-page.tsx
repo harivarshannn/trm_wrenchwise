@@ -217,7 +217,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. recruiter_john"
+                placeholder="e.g. wrenchwise"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 shadow-xs"
                 disabled={isLoading}
               />

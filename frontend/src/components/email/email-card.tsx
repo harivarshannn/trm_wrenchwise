@@ -65,7 +65,7 @@ export default function EmailCard({ email }: EmailCardProps) {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-400 mt-1">
               <span className="inline-flex items-center gap-1">
                 <User className="h-3 w-3 text-slate-400" />
-                <span>{email.sent_by || "Jane Doe (HR Lead)"}</span>
+                <span>{email.sent_by || "wrenchwise (HR Lead)"}</span>
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3 w-3 text-slate-400" />
