@@ -236,6 +236,7 @@ export const candidateService = {
       selection_duration_months?: number;
       rejection_reason?: string;
       rejection_snooze_until?: string | null;
+      job_opening_id?: string | null;
     }
   ): Promise<Candidate> => {
     try {

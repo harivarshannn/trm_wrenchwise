@@ -39,6 +39,7 @@ export const useUpdateCandidateStatus = () => {
       selection_duration_months,
       rejection_reason,
       rejection_snooze_until,
+      job_opening_id,
     }: {
       id: string;
       status: CandidateStatus;
@@ -47,6 +48,7 @@ export const useUpdateCandidateStatus = () => {
       selection_duration_months?: number;
       rejection_reason?: string;
       rejection_snooze_until?: string | null;
+      job_opening_id?: string | null;
     }) => {
       const oldCandidate = await candidateService.getCandidateById(id);
       const oldStatus = oldCandidate ? oldCandidate.status : "Unknown";
@@ -57,6 +59,7 @@ export const useUpdateCandidateStatus = () => {
         selection_duration_months,
         rejection_reason,
         rejection_snooze_until,
+        job_opening_id,
       });
       
       // Auto-inject timeline event

@@ -107,6 +107,7 @@ export default function DetailsDrawer({ candidateId, isOpen, onClose }: DetailsD
     selection_salary_per_month: string;
     selection_role: string;
     selection_duration_months: number;
+    job_opening_id: string;
   }) => {
     await updateStatusMutation.mutateAsync({
       id: candidate.id,
