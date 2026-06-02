@@ -16,6 +16,7 @@ from app.services.ocr import VisionOCRService
 from app.services.pdf_extractor import PdfTextExtractor
 from app.services.parser import ResumeParser
 from app.services.skills_llm import SkillsLLMService
+from app.services.groq_parser import GroqResumeParser
 from app.utils.config import get_settings, load_env
 from app.utils.logger import configure_logging, get_logger
 from app.utils.rate_limiter import RateLimiterMiddleware
@@ -137,15 +138,26 @@ def create_app() -> FastAPI:
         app.state.pdf_extractor = PdfTextExtractor(settings.ocr_min_text_length)
 
         skills_llm_service = None
-        if settings.groq_api_key and (settings.skills_llm_enabled or settings.certifications_llm_enabled):
-            skills_llm_service = SkillsLLMService(
+        groq_parser = None
+        if settings.groq_api_key:
+            if settings.skills_llm_enabled or settings.certifications_llm_enabled:
+                skills_llm_service = SkillsLLMService(
+                    api_key=settings.groq_api_key,
+                    model=settings.groq_model,
+                    request_timeout=settings.request_timeout_seconds,
+                    request_retries=settings.request_retries,
+                    request_backoff_factor=settings.request_backoff_factor,
+                )
+            groq_parser = GroqResumeParser(
                 api_key=settings.groq_api_key,
                 model=settings.groq_model,
-                request_timeout=settings.request_timeout_seconds,
+                timeout=settings.request_timeout_seconds,
                 request_retries=settings.request_retries,
                 request_backoff_factor=settings.request_backoff_factor,
             )
+
         app.state.skills_llm_service = skills_llm_service
+        app.state.groq_parser = groq_parser
         app.state.parser = ResumeParser(
             skills_refiner=skills_llm_service.refine_skills if settings.skills_llm_enabled and skills_llm_service else None,
             certifications_refiner=(

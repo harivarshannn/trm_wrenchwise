@@ -72,7 +72,7 @@ class Settings:
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
     groq_api_key: Optional[str] = None
-    groq_model: str = "llama-3.1-70b-versatile"
+    groq_model: str = "llama-3.3-70b-versatile"
     skills_llm_enabled: bool = True
     certifications_llm_enabled: bool = True
     brevo_api_key: Optional[str] = None
@@ -133,7 +133,7 @@ def get_settings() -> Settings:
         jwt_secret=jwt_secret,
         jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
         groq_api_key=os.getenv("GROQ_API_KEY", "").strip() or None,
-        groq_model=os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile"),
+        groq_model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         skills_llm_enabled=_parse_bool(os.getenv("SKILLS_LLM_ENABLED"), True),
         certifications_llm_enabled=_parse_bool(os.getenv("CERTIFICATIONS_LLM_ENABLED"), True),
         brevo_api_key=os.getenv("BREVO_API_KEY", "").strip() or None,

@@ -8,12 +8,14 @@ from fastapi import HTTPException, UploadFile
 
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "image/jpeg",
     "image/png",
 }
 
 ALLOWED_EXTENSIONS = {
     ".pdf",
+    ".docx",
     ".jpg",
     ".jpeg",
     ".png",
@@ -57,3 +59,12 @@ def is_pdf(filename: str | None, content_type: str | None) -> bool:
     if not filename:
         return False
     return filename.lower().endswith(".pdf")
+
+
+def is_docx(filename: str | None, content_type: str | None) -> bool:
+    """Check whether a file is a DOCX."""
+    if content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return True
+    if not filename:
+        return False
+    return filename.lower().endswith(".docx")

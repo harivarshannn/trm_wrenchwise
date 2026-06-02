@@ -7,7 +7,7 @@ from fastapi import APIRouter, File, Request, UploadFile, HTTPException
 from sqlalchemy import text
 
 from app.schemas.resume import ParsedData, UploadResumeResponse
-from app.utils.validators import is_pdf, read_upload_bytes, validate_upload_file
+from app.utils.validators import is_pdf, is_docx, read_upload_bytes, validate_upload_file
 
 
 router = APIRouter()
@@ -65,14 +65,34 @@ async def upload_resume(request: Request, file: UploadFile = File(...)) -> Uploa
                     status_code=400,
                     detail="Unable to extract text. This appears to be a scanned PDF (image only) or has no selectable text. Please upload a digital text PDF, as OCR services are currently disabled."
                 )
+        elif is_docx(file.filename, file.content_type):
+            from app.services.docx_extractor import DocxTextExtractor
+            docx_extractor = DocxTextExtractor()
+            raw_text = await asyncio.to_thread(docx_extractor.extract_text, content)
+            if not raw_text or len(raw_text.strip()) < 10:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Unable to extract text from the DOCX file. Please verify that the document contains text content."
+                )
         else:
             raise HTTPException(
                 status_code=400,
-                detail="Image upload is disabled because Google Cloud Vision OCR is currently inactive. Please upload a digital text PDF."
+                detail="Unsupported file format. Please upload a digital PDF (.pdf) or Word document (.docx)."
             )
 
-        parser = request.app.state.parser
-        parsed_resume = await asyncio.to_thread(parser.parse, raw_text)
+        groq_parser = getattr(request.app.state, "groq_parser", None)
+        parsed_resume = None
+
+        if groq_parser:
+            try:
+                parsed_resume = await asyncio.to_thread(groq_parser.parse, raw_text)
+            except Exception as llm_err:
+                from app.utils.logger import get_logger
+                get_logger("UploadRoute").warning(f"Groq parsing failed, falling back to rule-based: {llm_err}")
+
+        if not parsed_resume:
+            parser = request.app.state.parser
+            parsed_resume = await asyncio.to_thread(parser.parse, raw_text)
 
         # Convert to dict and add resume_url
         parsed_dict = parsed_resume.to_dict()
