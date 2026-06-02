@@ -108,8 +108,8 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
             <Image
               src="/logo.png"
               alt="Wrench Wise logo"
-              width={isCollapsed ? 44 : 88}
-              height={isCollapsed ? 44 : 88}
+              width={isCollapsed ? 44 : 132}
+              height={isCollapsed ? 44 : 132}
               className="object-contain transition-all duration-300"
               priority
             />
