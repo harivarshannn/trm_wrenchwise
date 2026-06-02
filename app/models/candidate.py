@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Index, String, Text, func, JSON, ForeignKey
+from sqlalchemy import DateTime, Enum, Index, String, Text, func, JSON, ForeignKey, LargeBinary
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -39,6 +39,7 @@ class Candidate(Base):
     salary_expectations: Mapped[str | None] = mapped_column(String(255), nullable=True)
     availability: Mapped[str | None] = mapped_column(String(255), nullable=True)
     resume_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resume_bytes: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     skills: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     education: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     experience: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)

@@ -133,12 +133,20 @@ export default function ResumeViewer({ resumeUrl, candidateName }: ResumeViewerP
           />
         )}
         
-        {/* Browser Sandbox Warning Banner */}
-        <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md border border-slate-100 rounded-xl px-3 py-2 flex items-start gap-2 shadow-sm pointer-events-none">
-          <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-          <span className="text-[10px] text-slate-500 font-semibold leading-relaxed">
-            Directly viewing trainer CV. If the document fails to load or download immediately, click <strong>&quot;Open Original&quot;</strong> to view in a browser tab.
-          </span>
+        {/* Environment Storage Alert & Sandbox Warning Banner */}
+        <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md border border-slate-150 rounded-2xl p-3 flex flex-col gap-1.5 shadow-md pointer-events-none max-w-lg">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <span className="text-[10px] text-slate-600 font-semibold leading-relaxed">
+              <strong className="text-amber-700">Cloud Storage Notice:</strong> This portal is on an ephemeral cloud environment. Document files in temporary storage reset on builds. If blank, click <strong>&quot;Update Resume&quot;</strong> above to re-upload and restore this document.
+            </span>
+          </div>
+          <div className="flex items-start gap-2 pt-1 border-t border-slate-100">
+            <AlertCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+            <span className="text-[9px] text-slate-400 font-medium leading-relaxed">
+              If document fails to load, click <strong>&quot;Open Original&quot;</strong> or check browser sandbox permissions.
+            </span>
+          </div>
         </div>
       </div>
 

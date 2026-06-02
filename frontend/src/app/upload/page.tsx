@@ -13,7 +13,7 @@ import { notesService } from "../../services/notes.service";
 import { candidateService } from "../../services/candidate.service";
 import { resumeApi } from "../../services/api";
 import { ParsedResume, Candidate } from "../../types";
-import { BrainCircuit, RotateCcw } from "lucide-react";
+import { BrainCircuit, RotateCcw, AlertTriangle } from "lucide-react";
 
 export default function UploadPage() {
   const [parsedData, setParsedData] = useState<ParsedResume | null>(null);
@@ -369,6 +369,15 @@ export default function UploadPage() {
               </p>
             </div>
             <Dropzone onUploadSuccess={handleUploadSuccess} onBulkUploadStart={handleBulkUploadStart} />
+            
+            {/* Ephemeral Environment Notice */}
+            <div className="max-w-md mx-auto mt-6 rounded-2xl border border-amber-150 bg-amber-50/40 p-4 text-xs text-amber-800 font-medium leading-relaxed flex items-start gap-3 shadow-xs">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-amber-900 font-bold mb-0.5">Cloud Environment Storage Tip</strong>
+                This system runs on an ephemeral cloud server. Original uploaded resume documents are stored in temporary local storage and will reset during automatic continuous deployment builds. If a preview fails to load, simply click the <strong>&quot;Update Resume&quot;</strong> button inside their profile workspace to restore it.
+              </div>
+            </div>
           </div>
         ) : (
           <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

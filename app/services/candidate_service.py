@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,21 @@ class CandidateService:
         self._repo = CandidateRepository(session)
         self._duplicates = DuplicateService(session)
         self._activity = ActivityService(session)
+
+    def _read_resume_bytes(self, resume_url: Optional[str]) -> Optional[bytes]:
+        if not resume_url:
+            return None
+        import os
+        filename = os.path.basename(resume_url)
+        file_path = os.path.join("uploads", filename)
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, "rb") as f:
+                    return f.read()
+            except Exception as e:
+                from app.utils.logger import get_logger
+                get_logger("CandidateService").warning(f"Failed to read resume file from disk: {e}")
+        return None
 
     async def create_candidate(
         self,
@@ -46,6 +61,7 @@ class CandidateService:
         if existing:
             raise DuplicateCandidateError(existing_candidate=self._to_dict(existing))
 
+        resume_bytes = self._read_resume_bytes(resume_url)
         candidate = Candidate(
             name=name,
             email=email,
@@ -58,6 +74,7 @@ class CandidateService:
             salary_expectations=salary_expectations,
             availability=availability,
             resume_url=resume_url,
+            resume_bytes=resume_bytes,
             skills=skills,
             education=education,
             experience=experience,
@@ -82,6 +99,9 @@ class CandidateService:
             raise NotFoundError("Candidate not found.")
 
         update_data = payload.model_dump(exclude_unset=True)
+        if "resume_url" in update_data:
+            update_data["resume_bytes"] = self._read_resume_bytes(update_data["resume_url"])
+
         for key, value in update_data.items():
             setattr(candidate, key, value)
 

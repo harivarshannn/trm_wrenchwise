@@ -50,6 +50,37 @@ def create_app() -> FastAPI:
     )
     app.state.settings = settings
 
+    @app.get("/uploads/{filename}")
+    async def serve_upload(filename: str):
+        import os
+        from fastapi.responses import FileResponse
+        from fastapi import HTTPException
+        from app.db.session import AsyncSessionLocal
+        from sqlalchemy import select
+        from app.models.candidate import Candidate
+
+        file_path = os.path.join("uploads", filename)
+        if os.path.exists(file_path):
+            return FileResponse(file_path)
+
+        # If not on disk, attempt to heal/restore from database
+        async with AsyncSessionLocal() as session:
+            stmt = select(Candidate).where(Candidate.resume_url == f"/uploads/{filename}")
+            result = await session.execute(stmt)
+            candidate = result.scalar_one_or_none()
+
+            if candidate and candidate.resume_bytes:
+                # Restore the file on disk so future static/direct fetches find it immediately
+                try:
+                    os.makedirs("uploads", exist_ok=True)
+                    with open(file_path, "wb") as f:
+                        f.write(candidate.resume_bytes)
+                except Exception as e:
+                    logger.error(f"Failed to restore resume file to disk: {e}")
+                return FileResponse(file_path)
+
+        raise HTTPException(status_code=404, detail="Resume file not found.")
+
     from fastapi.staticfiles import StaticFiles
     os.makedirs("uploads", exist_ok=True)
     app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

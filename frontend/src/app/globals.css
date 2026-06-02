@@ -36,7 +36,7 @@
 }
 
 html {
-  font-size: 16.5px; /* Proportionally scales all rem values for superior global visibility */
+  font-size: 18px; /* Proportionally scales all rem values for superior global visibility */
 }
 
 body {
@@ -49,7 +49,7 @@ body {
 /* Custom premium AG Grid theme styling */
 .ag-theme-custom-trms {
   --ag-font-family: var(--font-sans), sans-serif;
-  --ag-font-size: 14px; /* Scaled from 13px */
+  --ag-font-size: 15px; /* Scaled from 14px */
   --ag-header-background-color: #f8fafc;
   --ag-header-foreground-color: #475569;
   --ag-border-color: #f1f5f9;
@@ -70,7 +70,7 @@ body {
 .ag-theme-custom-trms .ag-header {
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 11px; /* Scaled from 10px */
+  font-size: 12px; /* Scaled from 11px */
   letter-spacing: 0.075em;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -93,7 +93,7 @@ body {
   height: 48px;
   color: #64748b;
   font-weight: 500;
-  font-size: 13px; /* Scaled from 12px */
+  font-size: 14px; /* Scaled from 13px */
 }
 
 /* Pagination buttons styling */
