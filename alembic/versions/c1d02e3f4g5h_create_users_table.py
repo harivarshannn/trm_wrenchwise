@@ -33,13 +33,8 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_users_username"), "users", ["username"], unique=True)
 
-    # Seed superadmin
-    import uuid
-    user_id = str(uuid.uuid4())
-    op.execute(
-        f"INSERT INTO users (id, username, password_hash, role, is_active, created_at, updated_at) "
-        f"VALUES ('{user_id}', 'wrenchwise', 'e461f5b045e3d7a8b9f0e1d2c3b4a59f:b2a656636dbcbae61071f4ca7dcba10c9ed9787ad72ab8decbcddfce94e59110', 'superior_admin', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
-    )
+    # No pre-seeded credentials to ensure maximum security. The first registered user dynamically becomes Super Admin.
+    pass
 
 
 def downgrade() -> None:
